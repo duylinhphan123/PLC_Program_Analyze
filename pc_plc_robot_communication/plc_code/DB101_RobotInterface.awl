@@ -1,5 +1,5 @@
 DATA_BLOCK "DB101_RobotInterface"
-TITLE = Robot Communication Interface
+TITLE = 'Robot Communication Interface'
 VERSION : 0.1
 
 STRUCT 
@@ -21,9 +21,18 @@ STRUCT
    Current_Speed : INT := 100;             //Current speed %
    Motion_Status : WORD ;                  //Motion status
    Robot_Error_Code : WORD ;               //Robot error code
-   Execution_Time : DWORD ;                //Execution time
+   Execution_Time : WORD ;                //Execution time
    Cycle_Counter : DINT ;                  //Communication cycle counter
-   Reserved : ARRAY [1 .. 10] OF WORD ;   //Reserved for expansion
+   Reserved1 : WORD ;                      //Reserved for expansion
+   Reserved2 : WORD ;                      //Reserved for expansion
+   Reserved3 : WORD ;                      //Reserved for expansion
+   Reserved4 : WORD ;                      //Reserved for expansion
+   Reserved5 : WORD ;                      //Reserved for expansion
+   Reserved6 : WORD ;                      //Reserved for expansion
+   Reserved7 : WORD ;                      //Reserved for expansion
+   Reserved8 : WORD ;                      //Reserved for expansion
+   Reserved9 : WORD ;                      //Reserved for expansion
+   Reserved10 : WORD ;                     //Reserved for expansion
 END_STRUCT ;
 
 BEGIN
@@ -45,18 +54,18 @@ BEGIN
    Current_Speed := 100; 
    Motion_Status := W#16#0; 
    Robot_Error_Code := W#16#0; 
-   Execution_Time := L#0; 
+   Execution_Time := W#16#0; 
    Cycle_Counter := L#0; 
-   Reserved[1] := W#16#0; 
-   Reserved[2] := W#16#0; 
-   Reserved[3] := W#16#0; 
-   Reserved[4] := W#16#0; 
-   Reserved[5] := W#16#0; 
-   Reserved[6] := W#16#0; 
-   Reserved[7] := W#16#0; 
-   Reserved[8] := W#16#0; 
-   Reserved[9] := W#16#0; 
-   Reserved[10] := W#16#0; 
+   Reserved1 := W#16#0; 
+   Reserved2 := W#16#0; 
+   Reserved3 := W#16#0; 
+   Reserved4 := W#16#0; 
+   Reserved5 := W#16#0; 
+   Reserved6 := W#16#0; 
+   Reserved7 := W#16#0; 
+   Reserved8 := W#16#0; 
+   Reserved9 := W#16#0; 
+   Reserved10 := W#16#0; 
 END_DATA_BLOCK
 
 // =======================================================================

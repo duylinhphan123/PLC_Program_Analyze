@@ -1,5 +1,5 @@
 DATA_BLOCK "DB100_CoordinateExchange"
-TITLE = Coordinate Exchange Interface
+TITLE = 'Coordinate Exchange Interface'
 VERSION : 0.1
 
 STRUCT 
@@ -22,7 +22,16 @@ STRUCT
    Timestamp : TIME ;                      //Timestamp
    Error_Code : WORD ;                     //Error code
    Cycle_Counter : DINT ;                  //Cycle counter
-   Reserved : ARRAY [1 .. 10] OF WORD ;   //Reserved for expansion
+   Reserved1 : WORD ;                      //Reserved for expansion
+   Reserved2 : WORD ;                      //Reserved for expansion
+   Reserved3 : WORD ;                      //Reserved for expansion
+   Reserved4 : WORD ;                      //Reserved for expansion
+   Reserved5 : WORD ;                      //Reserved for expansion
+   Reserved6 : WORD ;                      //Reserved for expansion
+   Reserved7 : WORD ;                      //Reserved for expansion
+   Reserved8 : WORD ;                      //Reserved for expansion
+   Reserved9 : WORD ;                      //Reserved for expansion
+   Reserved10 : WORD ;                     //Reserved for expansion
 END_STRUCT ;
 
 BEGIN
@@ -45,14 +54,14 @@ BEGIN
    Timestamp := T#0MS; 
    Error_Code := W#16#0; 
    Cycle_Counter := L#0; 
-   Reserved[1] := W#16#0; 
-   Reserved[2] := W#16#0; 
-   Reserved[3] := W#16#0; 
-   Reserved[4] := W#16#0; 
-   Reserved[5] := W#16#0; 
-   Reserved[6] := W#16#0; 
-   Reserved[7] := W#16#0; 
-   Reserved[8] := W#16#0; 
-   Reserved[9] := W#16#0; 
-   Reserved[10] := W#16#0; 
+   Reserved1 := W#16#0; 
+   Reserved2 := W#16#0; 
+   Reserved3 := W#16#0; 
+   Reserved4 := W#16#0; 
+   Reserved5 := W#16#0; 
+   Reserved6 := W#16#0; 
+   Reserved7 := W#16#0; 
+   Reserved8 := W#16#0; 
+   Reserved9 := W#16#0; 
+   Reserved10 := W#16#0; 
 END_DATA_BLOCK
