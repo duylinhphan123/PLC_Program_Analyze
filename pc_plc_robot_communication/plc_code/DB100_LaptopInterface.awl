@@ -1,98 +1,58 @@
-DATA_BLOCK DB100
-TITLE = 'Laptop Communication Interface'
-VERSION : 1.0
+DATA_BLOCK "DB100_CoordinateExchange"
+TITLE = Coordinate Exchange Interface
+VERSION : 0.1
 
-STRUCT
-  // =======================================================================
-  // DB100 - LAPTOP COMMUNICATION INTERFACE
-  // =======================================================================
-  // Description: Data exchange buffer between Laptop and PLC
-  // Size: 50 words (100 bytes)
-  // Protocol: Handshake-based communication
-  // =======================================================================
-
-  // COMMAND AND STATUS SECTION (Words 0-3)
-  CommandWord : WORD ;                    // DBW0: Command from Laptop
-  StatusWord : WORD ;                     // DBW2: Status to Laptop
-  AreaSelection : WORD ;                  // DBW4: Area selection (1=Area1, 2=Area2)
-  CoordinateSetNumber : WORD ;            // DBW6: Set number (1-10)
-
-  // COORDINATE DATA SECTION (Words 4-11)
-  X_Coordinate : DINT ;                   // DBW8: X position in mm
-  Y_Coordinate : DINT ;                   // DBW12: Y position in mm
-  Z_Coordinate : DINT ;                   // DBW16: Z position in mm
-  RX_Rotation : INT ;                     // DBW20: RX rotation (degrees*100)
-  RY_Rotation : INT ;                     // DBW22: RY rotation (degrees*100)
-  RZ_Rotation : INT ;                     // DBW24: RZ rotation (degrees*100)
-
-  // MOTION PARAMETERS SECTION (Words 12-15)
-  GripperStatus : WORD ;                  // DBW26: Gripper control
-  SpeedOverride : WORD ;                  // DBW28: Speed 10-100%
-  MotionType : WORD ;                     // DBW30: Motion type (Linear/Joint)
-  Precision : WORD ;                      // DBW32: Precision mode
-
-  // TIMING AND ERROR SECTION (Words 16-19)
-  TimestampHigh : DWORD ;                 // DBW34: Timestamp high word
-  TimestampLow : DWORD ;                  // DBW38: Timestamp low word
-  ErrorCode : WORD ;                      // DBW42: Error code
-  Reserved1 : WORD ;                      // DBW44: Reserved
-
-  // RESERVED SECTION (Words 20-49)
-  Reserved : ARRAY[1..10] OF WORD ;       // DBW46-64: Future expansion
-
-END_STRUCT
+STRUCT 
+   Command_Word : WORD ;                    //Command from Laptop
+   Status_Word : WORD := W#16#1;           //PLC Status
+   Handshake : BOOL ;                      //Handshake bit
+   Data_Valid : BOOL ;                     //Data valid
+   Error_Flag : BOOL ;                     //Error flag
+   Reserved_Bits : BOOL ;                  //Reserved (4.3-4.7)
+   Area_Selection : INT := 1;              //Area selection (1=Area1, 2=Area2)
+   Coordinate_Set : INT := 1;              //Coordinate set (1-10)
+   X_Coordinate : DINT ;                   //X coordinate (mm)
+   Y_Coordinate : DINT ;                   //Y coordinate (mm)
+   Z_Coordinate : DINT := L#500;           //Z coordinate (mm)
+   RX_Rotation : INT ;                     //RX rotation (degrees*100)
+   RY_Rotation : INT ;                     //RY rotation (degrees*100)
+   RZ_Rotation : INT ;                     //RZ rotation (degrees*100)
+   Gripper_Command : INT ;                 //Gripper command
+   Speed_Override : INT := 100;            //Speed override (10-100%)
+   Timestamp : TIME ;                      //Timestamp
+   Error_Code : WORD ;                     //Error code
+   Cycle_Counter : DINT ;                  //Cycle counter
+   Reserved : ARRAY [1 .. 10] OF WORD ;   //Reserved for expansion
+END_STRUCT ;
 
 BEGIN
-  // =======================================================================
-  // INITIAL VALUES
-  // =======================================================================
-  CommandWord := 0 ;
-  StatusWord := 0 ;
-  AreaSelection := 1 ;
-  CoordinateSetNumber := 1 ;
-  X_Coordinate := 0 ;
-  Y_Coordinate := 0 ;
-  Z_Coordinate := 0 ;
-  RX_Rotation := 0 ;
-  RY_Rotation := 0 ;
-  RZ_Rotation := 0 ;
-  GripperStatus := 0 ;
-  SpeedOverride := 50 ;
-  MotionType := 1 ;
-  Precision := 1 ;
-  TimestampHigh := 0 ;
-  TimestampLow := 0 ;
-  ErrorCode := 0 ;
-  Reserved1 := 0 ;
-
+   Command_Word := W#16#0; 
+   Status_Word := W#16#1; 
+   Handshake := FALSE; 
+   Data_Valid := FALSE; 
+   Error_Flag := FALSE; 
+   Reserved_Bits := FALSE; 
+   Area_Selection := 1; 
+   Coordinate_Set := 1; 
+   X_Coordinate := L#0; 
+   Y_Coordinate := L#0; 
+   Z_Coordinate := L#500; 
+   RX_Rotation := 0; 
+   RY_Rotation := 0; 
+   RZ_Rotation := 0; 
+   Gripper_Command := 0; 
+   Speed_Override := 100; 
+   Timestamp := T#0MS; 
+   Error_Code := W#16#0; 
+   Cycle_Counter := L#0; 
+   Reserved[1] := W#16#0; 
+   Reserved[2] := W#16#0; 
+   Reserved[3] := W#16#0; 
+   Reserved[4] := W#16#0; 
+   Reserved[5] := W#16#0; 
+   Reserved[6] := W#16#0; 
+   Reserved[7] := W#16#0; 
+   Reserved[8] := W#16#0; 
+   Reserved[9] := W#16#0; 
+   Reserved[10] := W#16#0; 
 END_DATA_BLOCK
-
-// =======================================================================
-// COMMAND CODES (DB100.CommandWord)
-// =======================================================================
-// 0x0000 = No command
-// 0x0001 = Write coordinate set
-// 0x0002 = Read coordinate set
-// 0x0003 = Execute coordinate set
-// 0x0004 = Get current position
-// 0x0005 = Stop current motion
-// 0x0006 = Reset error
-// 0x0007 = Get system status
-// 0x0008 = Emergency stop
-// 0x0009 = Clear all sets
-// 0x000A = Validate coordinate set
-
-// =======================================================================
-// STATUS CODES (DB100.StatusWord)
-// =======================================================================
-// 0x0000 = Idle
-// 0x0001 = Command received
-// 0x0002 = Processing
-// 0x0003 = Completed successfully
-// 0x0004 = Error occurred
-// 0x0005 = Warning
-// 0x0006 = Busy
-// 0x0007 = Robot not ready
-// 0x0008 = Communication error
-// 0x0009 = Data validation failed
-// 0x000A = Timeout

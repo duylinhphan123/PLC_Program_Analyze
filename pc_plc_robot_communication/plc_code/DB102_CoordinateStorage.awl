@@ -1,51 +1,43 @@
-DATA_BLOCK DB102
-TITLE = 'Coordinate Storage Buffer'
-VERSION : 1.0
+DATA_BLOCK "DB102_CoordinateStorage"
+TITLE = Coordinate Storage Buffer
+VERSION : 0.1
 
-STRUCT
-  // =======================================================================
-  // DB102 - COORDINATE STORAGE BUFFER
-  // =======================================================================
-  // Description: Storage for coordinate sets - 10 sets per area, 2 areas
-  // Size: 500 words (1000 bytes)
-  // Structure: Organized by Area and Set Number
-  // =======================================================================
-
-  // AREA 1 COORDINATE SETS (Words 0-199)
-  Area1_CoordinateSets : ARRAY[1..10] OF STRUCT
-    X_Position : DINT ;                   // X coordinate in mm
-    Y_Position : DINT ;                   // Y coordinate in mm
-    Z_Position : DINT ;                   // Z coordinate in mm
-    RX_Rotation : INT ;                   // RX rotation (degrees*100)
-    RY_Rotation : INT ;                   // RY rotation (degrees*100)
-    RZ_Rotation : INT ;                   // RZ rotation (degrees*100)
-    GripperCommand : WORD ;               // Gripper command
-    SpeedSetting : WORD ;                 // Speed setting %
-    MotionType : WORD ;                   // Motion type
-    PrecisionMode : WORD ;                // Precision mode
-    ValidationFlag : WORD ;               // Validation status
-    Checksum : WORD ;                     // Data checksum
-    Timestamp : DWORD ;                   // Creation timestamp
-    Reserved : ARRAY[1..3] OF WORD ;      // Reserved words
-  END_STRUCT ;
-
-  // AREA 2 COORDINATE SETS (Words 200-399)
-  Area2_CoordinateSets : ARRAY[1..10] OF STRUCT
-    X_Position : DINT ;                   // X coordinate in mm
-    Y_Position : DINT ;                   // Y coordinate in mm
-    Z_Position : DINT ;                   // Z coordinate in mm
-    RX_Rotation : INT ;                   // RX rotation (degrees*100)
-    RY_Rotation : INT ;                   // RY rotation (degrees*100)
-    RZ_Rotation : INT ;                   // RZ rotation (degrees*100)
-    GripperCommand : WORD ;               // Gripper command
-    SpeedSetting : WORD ;                 // Speed setting %
-    MotionType : WORD ;                   // Motion type
-    PrecisionMode : WORD ;                // Precision mode
-    ValidationFlag : WORD ;               // Validation status
-    Checksum : WORD ;                     // Data checksum
-    Timestamp : DWORD ;                   // Creation timestamp
-    Reserved : ARRAY[1..3] OF WORD ;      // Reserved words
-  END_STRUCT ;
+STRUCT 
+   // Area 1 Coordinate Sets
+   Area1_Sets : ARRAY [1 .. 10] OF STRUCT
+      X_Coordinate : DINT ;                //X coordinate (mm)
+      Y_Coordinate : DINT ;                //Y coordinate (mm)
+      Z_Coordinate : DINT := L#500;        //Z coordinate (mm)
+      RX_Rotation : INT ;                  //RX rotation (degrees*100)
+      RY_Rotation : INT ;                  //RY rotation (degrees*100)
+      RZ_Rotation : INT ;                  //RZ rotation (degrees*100)
+      Gripper_Command : INT ;              //Gripper command
+      Speed_Override : INT := 100;         //Speed override (10-100%)
+      Valid_Flag : BOOL ;                  //Data valid flag
+      Reserved : ARRAY [1 .. 3] OF WORD ; //Reserved
+   END_STRUCT ;
+   
+   // Area 2 Coordinate Sets
+   Area2_Sets : ARRAY [1 .. 10] OF STRUCT
+      X_Coordinate : DINT ;                //X coordinate (mm)
+      Y_Coordinate : DINT ;                //Y coordinate (mm)
+      Z_Coordinate : DINT := L#500;        //Z coordinate (mm)
+      RX_Rotation : INT ;                  //RX rotation (degrees*100)
+      RY_Rotation : INT ;                  //RY rotation (degrees*100)
+      RZ_Rotation : INT ;                  //RZ rotation (degrees*100)
+      Gripper_Command : INT ;              //Gripper command
+      Speed_Override : INT := 100;         //Speed override (10-100%)
+      Valid_Flag : BOOL ;                  //Data valid flag
+      Reserved : ARRAY [1 .. 3] OF WORD ; //Reserved
+   END_STRUCT ;
+   
+   // System Status
+   Total_Sets : INT ;                      //Total coordinate sets
+   Active_Area : INT := 1;                 //Current active area
+   Last_Updated : TIME ;                   //Last update time
+   Storage_Status : WORD ;                 //Storage status
+   Reserved_System : ARRAY [1 .. 10] OF WORD ; //Reserved
+END_STRUCT ;
 
   // SYSTEM STATUS SECTION (Words 400-449)
   SystemStatus : STRUCT
@@ -85,39 +77,21 @@ STRUCT
 END_STRUCT
 
 BEGIN
-  // =======================================================================
-  // INITIAL VALUES - COORDINATE LIMITS
-  // =======================================================================
-  CoordinateLimits.X_Min := -2000 ;      // -2000mm
-  CoordinateLimits.X_Max := 2000 ;       // +2000mm
-  CoordinateLimits.Y_Min := -2000 ;      // -2000mm
-  CoordinateLimits.Y_Max := 2000 ;       // +2000mm
-  CoordinateLimits.Z_Min := 0 ;          // 0mm
-  CoordinateLimits.Z_Max := 2500 ;       // +2500mm
-  CoordinateLimits.RX_Min := -18000 ;    // -180.00 degrees
-  CoordinateLimits.RX_Max := 18000 ;     // +180.00 degrees
-  CoordinateLimits.RY_Min := -18000 ;    // -180.00 degrees
-  CoordinateLimits.RY_Max := 18000 ;     // +180.00 degrees
-  CoordinateLimits.RZ_Min := -18000 ;    // -180.00 degrees
-  CoordinateLimits.RZ_Max := 18000 ;     // +180.00 degrees
-  CoordinateLimits.Speed_Min := 1 ;      // 1%
-  CoordinateLimits.Speed_Max := 100 ;    // 100%
-
-  // =======================================================================
-  // INITIAL VALUES - SYSTEM STATUS
-  // =======================================================================
-  SystemStatus.Area1_ActiveSets := 0 ;
-  SystemStatus.Area2_ActiveSets := 0 ;
-  SystemStatus.Area1_ValidSets := 0 ;
-  SystemStatus.Area2_ValidSets := 0 ;
-  SystemStatus.LastAccessedArea := 1 ;
-  SystemStatus.LastAccessedSet := 1 ;
-  SystemStatus.TotalValidSets := 0 ;
-  SystemStatus.SystemChecksum := 0 ;
-  SystemStatus.LastUpdateTime := 0 ;
-  SystemStatus.AccessCounter := 0 ;
-  SystemStatus.ErrorCounter := 0 ;
-
+   // Initialize all coordinate sets
+   Total_Sets := 0; 
+   Active_Area := 1; 
+   Last_Updated := T#0MS; 
+   Storage_Status := W#16#0; 
+   Reserved_System[1] := W#16#0; 
+   Reserved_System[2] := W#16#0; 
+   Reserved_System[3] := W#16#0; 
+   Reserved_System[4] := W#16#0; 
+   Reserved_System[5] := W#16#0; 
+   Reserved_System[6] := W#16#0; 
+   Reserved_System[7] := W#16#0; 
+   Reserved_System[8] := W#16#0; 
+   Reserved_System[9] := W#16#0; 
+   Reserved_System[10] := W#16#0; 
 END_DATA_BLOCK
 
 // =======================================================================

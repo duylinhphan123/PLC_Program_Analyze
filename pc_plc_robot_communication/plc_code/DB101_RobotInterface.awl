@@ -1,82 +1,62 @@
-DATA_BLOCK DB101
-TITLE = 'Robot Communication Interface'
-VERSION : 1.0
+DATA_BLOCK "DB101_RobotInterface"
+TITLE = Robot Communication Interface
+VERSION : 0.1
 
-STRUCT
-  // =======================================================================
-  // DB101 - ROBOT COMMUNICATION INTERFACE
-  // =======================================================================
-  // Description: Data exchange buffer between PLC and Robot
-  // Size: 50 words (100 bytes)
-  // Protocol: Real-time handshake with robot controller
-  // =======================================================================
-
-  // COMMAND AND STATUS SECTION (Words 0-3)
-  RobotCommand : WORD ;                   // DBW0: Command to Robot
-  RobotStatus : WORD ;                    // DBW2: Status from Robot
-  CurrentArea : WORD ;                    // DBW4: Current active area
-  CurrentSet : WORD ;                     // DBW6: Current coordinate set
-
-  // CURRENT POSITION FEEDBACK (Words 4-11)
-  CurrentX : DINT ;                       // DBW8: Current X position
-  CurrentY : DINT ;                       // DBW12: Current Y position
-  CurrentZ : DINT ;                       // DBW16: Current Z position
-  CurrentRX : INT ;                       // DBW20: Current RX rotation
-  CurrentRY : INT ;                       // DBW22: Current RY rotation
-  CurrentRZ : INT ;                       // DBW24: Current RZ rotation
-
-  // MOTION STATUS SECTION (Words 12-15)
-  MotionStatus : WORD ;                   // DBW26: Motion status
-  GripperFeedback : WORD ;                // DBW28: Gripper feedback
-  CurrentSpeed : WORD ;                   // DBW30: Current speed %
-  PathProgress : WORD ;                   // DBW32: Path completion %
-
-  // TIMING AND ERROR SECTION (Words 16-19)
-  ExecutionTime : DWORD ;                 // DBW34: Execution time in ms
-  RobotErrorCode : WORD ;                 // DBW38: Robot error code
-  FeedbackTimestamp : DWORD ;             // DBW40: Feedback timestamp
-  Reserved1 : WORD ;                      // DBW44: Reserved
-
-  // DIAGNOSTIC SECTION (Words 20-29)
-  CycleCounter : DWORD ;                  // DBW46: Communication cycle counter
-  SuccessfulCommands : DWORD ;            // DBW50: Successful command count
-  FailedCommands : DWORD ;                // DBW54: Failed command count
-  AverageExecutionTime : DWORD ;          // DBW58: Average execution time
-  MaxExecutionTime : DWORD ;              // DBW62: Maximum execution time
-
-  // RESERVED SECTION (Words 30-49)
-  Reserved : ARRAY[1..20] OF WORD ;       // DBW66-104: Future expansion
-
-END_STRUCT
+STRUCT 
+   Robot_Command : WORD ;                  //Command to Robot
+   Robot_Status : WORD := W#16#1;          //Status from Robot
+   Robot_Ready : BOOL ;                    //Robot ready flag
+   Motion_Active : BOOL ;                  //Motion active flag
+   Error_Active : BOOL ;                   //Error active flag
+   Reserved_Bits : BOOL ;                  //Reserved bits
+   Current_Area : INT := 1;                //Current active area
+   Current_Set : INT := 1;                 //Current coordinate set
+   Current_X : DINT ;                      //Current X position
+   Current_Y : DINT ;                      //Current Y position
+   Current_Z : DINT := L#500;              //Current Z position
+   Current_RX : INT ;                      //Current RX rotation
+   Current_RY : INT ;                      //Current RY rotation
+   Current_RZ : INT ;                      //Current RZ rotation
+   Gripper_Feedback : INT ;                //Gripper feedback
+   Current_Speed : INT := 100;             //Current speed %
+   Motion_Status : WORD ;                  //Motion status
+   Robot_Error_Code : WORD ;               //Robot error code
+   Execution_Time : DWORD ;                //Execution time
+   Cycle_Counter : DINT ;                  //Communication cycle counter
+   Reserved : ARRAY [1 .. 10] OF WORD ;   //Reserved for expansion
+END_STRUCT ;
 
 BEGIN
-  // =======================================================================
-  // INITIAL VALUES
-  // =======================================================================
-  RobotCommand := 0 ;
-  RobotStatus := 0 ;
-  CurrentArea := 1 ;
-  CurrentSet := 0 ;
-  CurrentX := 0 ;
-  CurrentY := 0 ;
-  CurrentZ := 0 ;
-  CurrentRX := 0 ;
-  CurrentRY := 0 ;
-  CurrentRZ := 0 ;
-  MotionStatus := 0 ;
-  GripperFeedback := 0 ;
-  CurrentSpeed := 0 ;
-  PathProgress := 0 ;
-  ExecutionTime := 0 ;
-  RobotErrorCode := 0 ;
-  FeedbackTimestamp := 0 ;
-  Reserved1 := 0 ;
-  CycleCounter := 0 ;
-  SuccessfulCommands := 0 ;
-  FailedCommands := 0 ;
-  AverageExecutionTime := 0 ;
-  MaxExecutionTime := 0 ;
-
+   Robot_Command := W#16#0; 
+   Robot_Status := W#16#1; 
+   Robot_Ready := FALSE; 
+   Motion_Active := FALSE; 
+   Error_Active := FALSE; 
+   Reserved_Bits := FALSE; 
+   Current_Area := 1; 
+   Current_Set := 1; 
+   Current_X := L#0; 
+   Current_Y := L#0; 
+   Current_Z := L#500; 
+   Current_RX := 0; 
+   Current_RY := 0; 
+   Current_RZ := 0; 
+   Gripper_Feedback := 0; 
+   Current_Speed := 100; 
+   Motion_Status := W#16#0; 
+   Robot_Error_Code := W#16#0; 
+   Execution_Time := L#0; 
+   Cycle_Counter := L#0; 
+   Reserved[1] := W#16#0; 
+   Reserved[2] := W#16#0; 
+   Reserved[3] := W#16#0; 
+   Reserved[4] := W#16#0; 
+   Reserved[5] := W#16#0; 
+   Reserved[6] := W#16#0; 
+   Reserved[7] := W#16#0; 
+   Reserved[8] := W#16#0; 
+   Reserved[9] := W#16#0; 
+   Reserved[10] := W#16#0; 
 END_DATA_BLOCK
 
 // =======================================================================
