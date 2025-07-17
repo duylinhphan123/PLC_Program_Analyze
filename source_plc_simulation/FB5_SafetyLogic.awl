@@ -1,0 +1,329 @@
+FUNCTION_BLOCK FB5
+TITLE = 'Safety Logic Function Block'
+VERSION : 0.1
+
+VAR_INPUT
+  EmergencyStop1 : BOOL ;           // Emergency stop circuit 1
+  EmergencyStop2 : BOOL ;           // Emergency stop circuit 2
+  LightCurtain : BOOL ;             // Light curtain status
+  SafetyRelay1 : BOOL ;             // Safety relay 1 feedback
+  SafetyRelay2 : BOOL ;             // Safety relay 2 feedback
+  ResetButton : BOOL ;              // Safety reset button
+  Area1Enable : BOOL ;              // Area 1 enable request
+  Area2Enable : BOOL ;              // Area 2 enable request
+END_VAR
+
+VAR_OUTPUT
+  SafetyOK : BOOL ;                 // Overall safety OK
+  Area1Safe : BOOL ;                // Area 1 safe to operate
+  Area2Safe : BOOL ;                // Area 2 safe to operate
+  SafetyError : BOOL ;              // Safety error detected
+  ErrorCode : WORD ;                // Safety error code
+END_VAR
+
+VAR
+  SafetyState : INT ;               // Current safety state
+  ErrorLatch : BOOL ;               // Error latch
+  ResetEdge : BOOL ;                // Reset button edge detection
+  ResetOld : BOOL ;                 // Previous reset button state
+  SafetyTimer : TON ;               // Safety delay timer
+  TestTimer : TON ;                 // Safety test timer
+  TestCycle : BOOL ;                // Test cycle active
+  TestCounter : INT ;               // Test counter
+END_VAR
+
+VAR_TEMP
+  TempSafety : BOOL ;               // Temporary safety status
+  AllInputsOK : BOOL ;              // All safety inputs OK
+END_VAR
+
+BEGIN
+// =============================================================================
+// FUNCTION BLOCK FB5 - SAFETY LOGIC
+// =============================================================================
+// Description: Handles all safety interlocks for the palletizing system
+// Called from: FC54 (Area 1) and FC64 (Area 2)
+// Standard: IEC 61508 SIL 2 compliant
+// =============================================================================
+
+// -----------------------------------------------------------------------
+// RESET BUTTON EDGE DETECTION
+// -----------------------------------------------------------------------
+
+// Detect rising edge of reset button
+      A     #ResetButton
+      A     NOT #ResetOld
+      =     #ResetEdge
+      
+      A     #ResetButton
+      =     #ResetOld
+
+// -----------------------------------------------------------------------
+// SAFETY INPUT MONITORING
+// -----------------------------------------------------------------------
+
+// Check all safety inputs
+      A     #EmergencyStop1
+      A     #EmergencyStop2
+      A     #LightCurtain
+      A     #SafetyRelay1
+      A     #SafetyRelay2
+      =     #AllInputsOK
+
+// -----------------------------------------------------------------------
+// SAFETY STATE MACHINE
+// -----------------------------------------------------------------------
+
+// Load current safety state
+      L     #SafetyState
+      
+      // State 0: System startup/reset
+      L     0
+      ==I
+      JC    SAFETY_STARTUP
+      
+      // State 1: Safety monitoring
+      L     1
+      ==I
+      JC    SAFETY_MONITORING
+      
+      // State 2: Safety error
+      L     2
+      ==I
+      JC    SAFETY_ERROR_STATE
+      
+      // State 3: Safety test
+      L     3
+      ==I
+      JC    SAFETY_TEST_STATE
+      
+      // Default: Go to error state
+      L     2
+      T     #SafetyState
+      JU    SAFETY_ERROR_STATE
+
+// -----------------------------------------------------------------------
+// STATE 0: SAFETY STARTUP
+// -----------------------------------------------------------------------
+
+SAFETY_STARTUP:
+      // Clear all outputs
+      R     #SafetyOK
+      R     #Area1Safe
+      R     #Area2Safe
+      R     #SafetyError
+      
+      // Clear error latch
+      R     #ErrorLatch
+      
+      // Check if all inputs are OK
+      A     #AllInputsOK
+      JCN   STARTUP_WAIT
+      
+      // Start safety delay timer
+      A     #AllInputsOK
+      TON   #SafetyTimer, T#2S      // 2 second safety delay
+      
+      // Check if delay completed
+      A     #SafetyTimer.Q
+      JCN   STARTUP_WAIT
+      
+      // Move to monitoring state
+      L     1
+      T     #SafetyState
+      JU    SAFETY_MONITORING
+
+STARTUP_WAIT:
+      // Wait for safety conditions
+      L     16#0001
+      T     #ErrorCode
+      JU    SAFETY_EXIT
+
+// -----------------------------------------------------------------------
+// STATE 1: SAFETY MONITORING
+// -----------------------------------------------------------------------
+
+SAFETY_MONITORING:
+      // Check safety inputs
+      A     #AllInputsOK
+      JCN   SAFETY_FAULT
+      
+      // Set safety OK
+      S     #SafetyOK
+      
+      // Check area-specific safety
+      A     #SafetyOK
+      A     #Area1Enable
+      =     #Area1Safe
+      
+      A     #SafetyOK
+      A     #Area2Enable
+      =     #Area2Safe
+      
+      // Clear error
+      R     #SafetyError
+      L     0
+      T     #ErrorCode
+      
+      // Check for periodic safety test
+      A     #TestTimer.Q
+      JC    START_SAFETY_TEST
+      
+      // Start test timer (every 10 minutes)
+      A     TRUE
+      TON   #TestTimer, T#10M
+      
+      JU    SAFETY_EXIT
+
+START_SAFETY_TEST:
+      // Start safety test cycle
+      L     3
+      T     #SafetyState
+      S     #TestCycle
+      JU    SAFETY_TEST_STATE
+
+SAFETY_FAULT:
+      // Safety fault detected
+      L     2
+      T     #SafetyState
+      S     #ErrorLatch
+      JU    SAFETY_ERROR_STATE
+
+// -----------------------------------------------------------------------
+// STATE 2: SAFETY ERROR STATE
+// -----------------------------------------------------------------------
+
+SAFETY_ERROR_STATE:
+      // Set error outputs
+      S     #SafetyError
+      R     #SafetyOK
+      R     #Area1Safe
+      R     #Area2Safe
+      
+      // Determine error code
+      A     NOT #EmergencyStop1
+      JC    ERROR_ESTOP1
+      
+      A     NOT #EmergencyStop2
+      JC    ERROR_ESTOP2
+      
+      A     NOT #LightCurtain
+      JC    ERROR_LIGHT_CURTAIN
+      
+      A     NOT #SafetyRelay1
+      JC    ERROR_SAFETY_RELAY1
+      
+      A     NOT #SafetyRelay2
+      JC    ERROR_SAFETY_RELAY2
+      
+      // Generic safety error
+      L     16#0010
+      T     #ErrorCode
+      JU    CHECK_RESET
+
+ERROR_ESTOP1:
+      L     16#0011
+      T     #ErrorCode
+      JU    CHECK_RESET
+
+ERROR_ESTOP2:
+      L     16#0012
+      T     #ErrorCode
+      JU    CHECK_RESET
+
+ERROR_LIGHT_CURTAIN:
+      L     16#0013
+      T     #ErrorCode
+      JU    CHECK_RESET
+
+ERROR_SAFETY_RELAY1:
+      L     16#0014
+      T     #ErrorCode
+      JU    CHECK_RESET
+
+ERROR_SAFETY_RELAY2:
+      L     16#0015
+      T     #ErrorCode
+      JU    CHECK_RESET
+
+CHECK_RESET:
+      // Check for reset conditions
+      A     #ResetEdge
+      A     #AllInputsOK
+      JCN   SAFETY_EXIT
+      
+      // Reset accepted
+      R     #ErrorLatch
+      L     0
+      T     #SafetyState
+      JU    SAFETY_EXIT
+
+// -----------------------------------------------------------------------
+// STATE 3: SAFETY TEST STATE
+// -----------------------------------------------------------------------
+
+SAFETY_TEST_STATE:
+      // Disable outputs during test
+      R     #SafetyOK
+      R     #Area1Safe
+      R     #Area2Safe
+      
+      // Set test error code
+      L     16#0020
+      T     #ErrorCode
+      
+      // Increment test counter
+      L     #TestCounter
+      L     1
+      +I
+      T     #TestCounter
+      
+      // Test duration: 5 seconds
+      A     #TestCycle
+      TON   #SafetyTimer, T#5S
+      
+      A     #SafetyTimer.Q
+      JCN   SAFETY_EXIT
+      
+      // Test completed
+      R     #TestCycle
+      L     1
+      T     #SafetyState              // Return to monitoring
+      
+      // Reset test timer
+      A     FALSE
+      TON   #TestTimer, T#10M
+      
+      JU    SAFETY_EXIT
+
+// -----------------------------------------------------------------------
+// OUTPUT ASSIGNMENTS
+// -----------------------------------------------------------------------
+
+SAFETY_EXIT:
+      // Additional safety checks
+      A     #SafetyOK
+      AN    #ErrorLatch
+      =     #TempSafety
+      
+      // Final safety output
+      A     #TempSafety
+      =     #SafetyOK
+      
+      // Area-specific safety outputs
+      A     #SafetyOK
+      A     #Area1Enable
+      AN    #TestCycle
+      =     #Area1Safe
+      
+      A     #SafetyOK
+      A     #Area2Enable
+      AN    #TestCycle
+      =     #Area2Safe
+      
+      // Overall safety error
+      A     #ErrorLatch
+      O     NOT #AllInputsOK
+      =     #SafetyError
+
+END_FUNCTION_BLOCK

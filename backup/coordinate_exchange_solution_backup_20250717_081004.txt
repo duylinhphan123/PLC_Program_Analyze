@@ -1,0 +1,478 @@
+ếu GIẢI PHÁP TRAO ĐỔI TỌA ĐỘ LAPTOP <-> PLC <-> ROBOT
+===========================================================
+Phiên bản: 1.0 - Ngày: 15/07/2025
+Hệ thống: S7-400H CPU 412-3H + Robot ABB IRC5
+
+I. TỔNG QUAN GIẢI PHÁP
+=======================
+
+KIẾN TRÚC TRAO ĐỔI DỮ LIỆU:
+
+┌─────────────┐    Ethernet/TCP    ┌─────────────┐    PROFIBUS-DP    ┌─────────────┐
+│   LAPTOP    │◄─────────────────►│   PLC S7    │◄────────────────►│ ROBOT ABB   │
+│  (Client)   │     S7 Protocol    │   400H      │   Digital I/O     │    IRC5     │
+│             │     Port 102       │ CPU 412-3H  │   + Data Words    │             │
+└─────────────┘                    └─────────────┘                   └─────────────┘
+
+NGUYÊN TẮC THIẾT KẾ:
+• Không thay đổi chương trình điều khiển hiện tại
+• PLC làm trung gian buffer tọa độ
+• Sử dụng vùng nhớ riêng biệt (DB mới)
+• Handshake protocol để đảm bảo tính toàn vẹn dữ liệu
+• Real-time monitoring và error handling
+
+II. KIẾN TRÚC DATA BLOCKS MỚI
+==============================
+
+A. DB100 - LAPTOP COMMUNICATION INTERFACE
+─────────────────────────────────────────
+
+STRUCTURE:
+┌──────────────────────────────────────────────────────────────┐
+│ DB100 - Laptop Communication Buffer                         │
+├──────────────────────────────────────────────────────────────┤
+│ DBW 0-1    : Command Word (Laptop -> PLC)                   │
+│ DBW 2-3    : Status Word (PLC -> Laptop)                    │
+│ DBW 4-5    : Area Selection (1=Area1, 2=Area2)              │
+│ DBW 6-7    : Coordinate Set Number (1-10)                   │
+│ DBW 8-9    : X Coordinate (mm) - Integer                    │
+│ DBW 10-11  : Y Coordinate (mm) - Integer                    │
+│ DBW 12-13  : Z Coordinate (mm) - Integer                    │
+│ DBW 14-15  : RX Rotation (degrees*100) - Integer            │
+│ DBW 16-17  : RY Rotation (degrees*100) - Integer            │
+│ DBW 18-19  : RZ Rotation (degrees*100) - Integer            │
+│ DBW 20-21  : Gripper Status (0=Open, 1=Close, 2=Special)    │
+│ DBW 22-23  : Speed Override (10-100%)                       │
+│ DBW 24-25  : Timestamp High Word                            │
+│ DBW 26-27  : Timestamp Low Word                             │
+│ DBW 28-29  : Error Code                                     │
+│ DBW 30-49  : Reserved for future expansion                  │
+└──────────────────────────────────────────────────────────────┘
+
+B. DB101 - ROBOT COMMUNICATION INTERFACE  
+──────────────────────────────────────────
+
+STRUCTURE:
+┌──────────────────────────────────────────────────────────────┐
+│ DB101 - Robot Communication Buffer                          │
+├──────────────────────────────────────────────────────────────┤
+│ DBW 0-1    : Robot Command Word (PLC -> Robot)              │
+│ DBW 2-3    : Robot Status Word (Robot -> PLC)               │
+│ DBW 4-5    : Current Area Active (1=Area1, 2=Area2)         │
+│ DBW 6-7    : Current Coordinate Set                         │
+│ DBW 8-9    : Current X Position (mm)                        │
+│ DBW 10-11  : Current Y Position (mm)                        │
+│ DBW 12-13  : Current Z Position (mm)                        │
+│ DBW 14-15  : Current RX Rotation                            │
+│ DBW 16-17  : Current RY Rotation                            │
+│ DBW 18-19  : Current RZ Rotation                            │
+│ DBW 20-21  : Current Gripper Status                         │
+│ DBW 22-23  : Motion Status (0=Idle, 1=Moving, 2=Complete)   │
+│ DBW 24-25  : Robot Error Code                               │
+│ DBW 26-27  : Execution Time (ms)                            │
+│ DBW 28-29  : Feedback Timestamp High                        │
+│ DBW 30-31  : Feedback Timestamp Low                         │
+│ DBW 32-49  : Reserved for expansion                         │
+└──────────────────────────────────────────────────────────────┘
+
+C. DB102 - COORDINATE STORAGE BUFFER
+────────────────────────────────────
+
+STRUCTURE: 10 Sets × 2 Areas = 20 Coordinate Sets Total
+┌──────────────────────────────────────────────────────────────┐
+│ AREA 1 - Coordinate Sets 1-10 (DBW 0-199)                   │
+│ Each set: 20 Words (X,Y,Z,RX,RY,RZ,Gripper,Speed,etc.)     │
+├──────────────────────────────────────────────────────────────┤
+│ AREA 2 - Coordinate Sets 1-10 (DBW 200-399)                 │
+│ Each set: 20 Words (X,Y,Z,RX,RY,RZ,Gripper,Speed,etc.)     │
+├──────────────────────────────────────────────────────────────┤
+│ DBW 400-450: Validation flags và checksums                  │
+└──────────────────────────────────────────────────────────────┘
+
+III. COMMAND PROTOCOL DEFINITION
+=================================
+
+A. LAPTOP -> PLC COMMANDS (DB100.DBW0):
+───────────────────────────────────────
+
+┌────────┬─────────────────────────────────────────────────────┐
+│ Value  │ Command Description                                 │
+├────────┼─────────────────────────────────────────────────────┤
+│ 0000   │ No Command / Idle                                   │
+│ 0001   │ Write Coordinate Set                                │
+│ 0002   │ Read Coordinate Set                                 │
+│ 0003   │ Execute Coordinate Set                              │
+│ 0004   │ Get Robot Current Position                          │
+│ 0005   │ Emergency Stop Coordinate Transfer                  │
+│ 0006   │ Reset Communication                                 │
+│ 0007   │ Get System Status                                   │
+│ 0008   │ Validate Coordinate Set                             │
+│ 0009   │ Delete Coordinate Set                               │
+│ 000A   │ Get Available Memory                                │
+│ 00FF   │ Test Communication                                  │
+└────────┴─────────────────────────────────────────────────────┘
+
+B. PLC -> LAPTOP STATUS (DB100.DBW2):
+─────────────────────────────────────
+
+┌────────┬─────────────────────────────────────────────────────┐
+│ Value  │ Status Description                                  │
+├────────┼─────────────────────────────────────────────────────┤
+│ 0000   │ Ready / Idle                                        │
+│ 0001   │ Command Received, Processing                        │
+│ 0002   │ Command Executed Successfully                       │
+│ 0003   │ Command Failed - Invalid Parameter                  │
+│ 0004   │ Command Failed - Robot Not Ready                    │
+│ 0005   │ Command Failed - Safety Violation                   │
+│ 0006   │ Command Failed - Communication Error                │
+│ 0007   │ Command Failed - Memory Full                        │
+│ 0008   │ Robot Executing Motion                              │
+│ 0009   │ Robot Motion Complete                               │
+│ 000A   │ Robot Error Detected                                │
+│ 000B   │ System in Emergency Mode                            │
+│ 8000   │ PLC Internal Error                                  │
+│ FFFF   │ Communication Test Response                         │
+└────────┴─────────────────────────────────────────────────────┘
+
+IV. FUNCTION CODES MỚI
+======================
+
+A. FC200 - LAPTOP COMMUNICATION HANDLER
+────────────────────────────────────────
+
+PURPOSE: Xử lý giao tiếp giữa Laptop và PLC
+CALL FREQUENCY: Mỗi scan cycle (OB1)
+MEMORY USAGE: DB100, DB102
+
+MAIN FUNCTIONS:
+• Đọc command từ Laptop (DB100.DBW0)
+• Validate command parameters
+• Execute command logic
+• Update status word (DB100.DBW2)
+• Handle timeouts và error conditions
+• Log communication events
+
+PSEUDO CODE:
+```
+FC200_LaptopCommHandler:
+BEGIN
+    // Read command from laptop
+    L DB100.DBW0
+    T #Command
+    
+    // Process command based on value
+    CASE #Command OF
+        1: CALL FC201_WriteCoordinate
+        2: CALL FC202_ReadCoordinate  
+        3: CALL FC203_ExecuteCoordinate
+        4: CALL FC204_GetRobotPosition
+        // ... other commands
+    END_CASE
+    
+    // Update timestamp và status
+    CALL FC_GetSystemTime
+    T DB100.DBW24  // Timestamp
+    
+    // Clear command after processing
+    L 0
+    T DB100.DBW0
+END
+```
+
+B. FC201 - WRITE COORDINATE SET
+───────────────────────────────
+
+PURPOSE: Ghi tọa độ từ Laptop vào PLC buffer
+INPUT: DB100 coordinate data
+OUTPUT: Status in DB100.DBW2
+
+VALIDATION:
+• Check area selection (1-2)
+• Check coordinate set number (1-10)
+• Validate coordinate ranges
+• Check for coordinate conflicts với existing sets
+
+C. FC202 - READ COORDINATE SET  
+──────────────────────────────
+
+PURPOSE: Đọc tọa độ từ PLC buffer gửi về Laptop
+INPUT: Area và set number từ DB100
+OUTPUT: Coordinate data in DB100
+
+D. FC203 - EXECUTE COORDINATE SET
+─────────────────────────────────
+
+PURPOSE: Gửi tọa độ từ PLC buffer đến Robot
+INTEGRATION: Interface với FC52/FC62 (existing robot comm)
+
+LOGIC:
+• Validate coordinate set exists
+• Check robot ready status  
+• Transfer coordinates to robot buffer
+• Monitor execution progress
+• Report completion status
+
+E. FC204 - GET ROBOT POSITION
+─────────────────────────────
+
+PURPOSE: Lấy vị trí hiện tại của Robot
+SOURCE: Existing robot feedback (IW registers)
+OUTPUT: Current position in DB100
+
+V. INTEGRATION STRATEGY
+========================
+
+A. INTEGRATION VỚI CHƯƠNG TRÌNH HIỆN TẠI:
+──────────────────────────────────────────
+
+1. THÊM VÀO OB1 (MAIN PROGRAM):
+```
+NETWORK TITLE = Laptop Communication Handler
+    CALL FC 200;  // Laptop Communication Handler
+    CALL FC 205;  // Robot Coordination Manager  
+```
+
+2. THÊM VÀO FC50/FC60 (AREA CONTROL):
+```
+NETWORK TITLE = Check External Coordinate Commands
+    A DB100.DBX4.0  // External coordinate command active
+    JNB M_NoExternalCmd
+    CALL FC203     // Execute external coordinate
+    M_NoExternalCmd: NOP 0;
+```
+
+3. KHÔNG THAY ĐỔI:
+• Existing safety logic (FC54/FC64)
+• Current robot communication (FC52/FC62)  
+• Production cycle logic
+• Error handling mechanisms
+
+B. PRIORITY MANAGEMENT:
+──────────────────────
+
+HIGH PRIORITY (Không bị ghi đè):
+• Safety systems
+• Emergency stops
+• Current production cycles
+• Existing error recovery
+
+LOW PRIORITY (Có thể bị interrupt):
+• External coordinate commands từ Laptop
+• Manual position adjustments
+• Diagnostic functions
+
+VI. LAPTOP SOFTWARE INTERFACE
+==============================
+
+A. S7 COMMUNICATION LIBRARY:
+────────────────────────────
+
+RECOMMENDED: Snap7 Library (Open Source)
+• Support S7-300/400/1200/1500
+• Multi-platform (Windows/Linux/Mac)
+• Multiple programming languages (C#, Python, Java)
+
+EXAMPLE C# CODE:
+```csharp
+using Snap7;
+
+public class PLCCoordinateInterface
+{
+    private S7Client plc;
+    private string plcIP = "192.168.1.100";
+    
+    public bool ConnectToPLC()
+    {
+        plc = new S7Client();
+        return plc.ConnectTo(plcIP, 0, 1) == 0;
+    }
+    
+    public bool WriteCoordinate(int area, int setNum, 
+                               Coordinate coord)
+    {
+        byte[] buffer = new byte[50];
+        
+        // Pack coordinate data
+        S7.SetWordAt(buffer, 4, (ushort)area);
+        S7.SetWordAt(buffer, 6, (ushort)setNum);
+        S7.SetWordAt(buffer, 8, (ushort)coord.X);
+        S7.SetWordAt(buffer, 10, (ushort)coord.Y);
+        S7.SetWordAt(buffer, 12, (ushort)coord.Z);
+        // ... pack other coordinates
+        
+        // Write to PLC
+        int result = plc.DBWrite(100, 0, buffer.Length, buffer);
+        
+        // Send command
+        byte[] cmdBuffer = {0, 1}; // Command 0001
+        plc.DBWrite(100, 0, 2, cmdBuffer);
+        
+        return result == 0;
+    }
+    
+    public Coordinate ReadCoordinate(int area, int setNum)
+    {
+        // Send read command
+        byte[] cmdBuffer = new byte[8];
+        S7.SetWordAt(cmdBuffer, 0, 2);      // Command 0002
+        S7.SetWordAt(cmdBuffer, 4, (ushort)area);
+        S7.SetWordAt(cmdBuffer, 6, (ushort)setNum);
+        
+        plc.DBWrite(100, 0, 8, cmdBuffer);
+        
+        // Wait for response và read data
+        Thread.Sleep(100);
+        byte[] response = new byte[50];
+        plc.DBRead(100, 8, response.Length, response);
+        
+        return ParseCoordinate(response);
+    }
+}
+```
+
+B. PYTHON INTERFACE EXAMPLE:
+────────────────────────────
+
+```python
+import snap7
+import struct
+import time
+
+class PLCCoordinateInterface:
+    def __init__(self, plc_ip="192.168.1.100"):
+        self.plc = snap7.client.Client()
+        self.plc_ip = plc_ip
+        
+    def connect(self):
+        try:
+            self.plc.connect(self.plc_ip, 0, 1)
+            return True
+        except:
+            return False
+            
+    def write_coordinate(self, area, set_num, x, y, z, rx, ry, rz):
+        # Pack data into buffer
+        data = struct.pack('>8H', 1, 0, area, set_num, x, y, z, rx)
+        
+        # Write to DB100
+        self.plc.db_write(100, 0, data)
+        
+        # Wait for processing
+        time.sleep(0.1)
+        
+        # Read status
+        status = self.plc.db_read(100, 2, 2)
+        return struct.unpack('>H', status)[0]
+        
+    def read_robot_position(self):
+        # Send get position command
+        cmd_data = struct.pack('>H', 4)  # Command 0004
+        self.plc.db_write(100, 0, cmd_data)
+        
+        time.sleep(0.1)
+        
+        # Read response
+        pos_data = self.plc.db_read(100, 8, 12)
+        x, y, z, rx, ry, rz = struct.unpack('>6H', pos_data)
+        
+        return {'x': x, 'y': y, 'z': z, 'rx': rx, 'ry': ry, 'rz': rz}
+```
+
+VII. SAFETY CONSIDERATIONS
+==========================
+
+A. SAFETY INTERLOCKS:
+─────────────────────
+
+1. COORDINATE VALIDATION:
+• Min/Max limits for each axis
+• Collision detection với existing equipment
+• Work envelope validation
+• Speed limitations
+
+2. OVERRIDE PROTECTION:
+• External coordinates không thể override safety functions
+• Emergency stop luôn có quyền ưu tiên cao nhất
+• Production cycle có thể reject external commands
+
+3. ACCESS CONTROL:
+• IP address filtering
+• Command authentication
+• Session timeout mechanisms
+• Audit logging
+
+B. ERROR RECOVERY:
+─────────────────
+
+1. COMMUNICATION TIMEOUT:
+• Max 5 seconds waiting for response
+• Automatic fallback to previous good coordinates
+• Error notification to operator
+
+2. INVALID COORDINATES:
+• Range checking before execution
+• Automatic rejection với clear error message
+• Logging invalid attempts
+
+VIII. IMPLEMENTATION TIMELINE
+=============================
+
+PHASE 1 (Week 1-2): PLC Programming
+• Create DB100, DB101, DB102
+• Implement FC200-FC205
+• Integration testing với existing system
+
+PHASE 2 (Week 3): Laptop Software  
+• Develop communication library
+• Create test interface
+• Basic coordinate exchange testing
+
+PHASE 3 (Week 4): Integration Testing
+• End-to-end testing
+• Safety validation
+• Performance optimization
+
+PHASE 4 (Week 5): Documentation và Training
+• User manual creation
+• Operator training
+• Final system validation
+
+IX. PERFORMANCE SPECIFICATIONS
+===============================
+
+COMMUNICATION SPEED:
+• Coordinate transfer: <100ms
+• Status update: <50ms
+• Error response: <200ms
+
+SYSTEM IMPACT:
+• CPU load increase: <5%
+• Memory usage: ~2KB additional
+• No impact on existing cycle times
+
+RELIABILITY:
+• Communication uptime: >99.5%
+• Error recovery time: <1 second
+• Data integrity: 100% (checksum validation)
+
+X. BACKUP VÀ MAINTENANCE
+========================
+
+A. BACKUP STRATEGY:
+──────────────────
+• Coordinate sets backup mỗi shift
+• Configuration backup weekly  
+• Full system backup monthly
+
+B. MAINTENANCE REQUIREMENTS:
+───────────────────────────
+• Communication log review: Daily
+• Performance monitoring: Weekly
+• Coordinate validation: Monthly
+• Full system validation: Quarterly
+
+=============================================================================
+LƯU Ý: Giải pháp này được thiết kế để tích hợp mà KHÔNG ẢNH HƯỞNG 
+đến chương trình điều khiển hiện tại. PLC hoạt động như một trung gian 
+thông minh, đảm bảo an toàn và tính toàn vẹn dữ liệu.
+=============================================================================

@@ -1,0 +1,207 @@
+SIMATIC MANAGER DATA BLOCK TABLE STRUCTURE
+==========================================
+Format: Variable_Name	Type	Address	Initial_Value	Comment
+
+==========================================
+DB100 - LAPTOP COMMUNICATION INTERFACE
+==========================================
+
+Command_Word	WORD	0	W#16#0	Lệnh từ Laptop
+Status_Word	WORD	2	W#16#1	Trạng thái PLC
+Handshake	BOOL	4.0	FALSE	Handshake bit
+Data_Valid	BOOL	4.1	FALSE	Dữ liệu hợp lệ
+Error_Flag	BOOL	4.2	FALSE	Cờ lỗi
+Reserved_Bits	BOOL	4.3	FALSE	Dự trữ (4.3-4.7)
+Area_Selection	INT	6	1	Khu vực (1=Area1, 2=Area2)
+Coordinate_Set	INT	8	1	Bộ tọa độ (1-10)
+X_Coordinate	DINT	10	L#0	Tọa độ X (mm)
+Y_Coordinate	DINT	14	L#0	Tọa độ Y (mm)
+Z_Coordinate	DINT	18	L#500	Tọa độ Z (mm)
+RX_Rotation	INT	22	0	Góc RX (degrees*100)
+RY_Rotation	INT	24	0	Góc RY (degrees*100)
+RZ_Rotation	INT	26	0	Góc RZ (degrees*100)
+Gripper_Command	INT	28	0	Lệnh gripper
+Speed_Override	INT	30	100	Tốc độ (10-100%)
+Timestamp	TIME	32	T#0MS	Timestamp
+Error_Code	WORD	36	W#16#0	Mã lỗi
+Cycle_Counter	DINT	38	L#0	Bộ đếm chu kỳ
+Reserved_1	WORD	42	W#16#0	Dự trữ mở rộng
+Reserved_2	WORD	44	W#16#0	Dự trữ mở rộng
+Reserved_3	WORD	46	W#16#0	Dự trữ mở rộng
+Reserved_4	WORD	48	W#16#0	Dự trữ mở rộng
+Reserved_5	WORD	50	W#16#0	Dự trữ mở rộng
+Reserved_6	WORD	52	W#16#0	Dự trữ mở rộng
+Reserved_7	WORD	54	W#16#0	Dự trữ mở rộng
+Reserved_8	WORD	56	W#16#0	Dự trữ mở rộng
+Reserved_9	WORD	58	W#16#0	Dự trữ mở rộng
+Reserved_10	WORD	60	W#16#0	Dự trữ mở rộng
+
+==========================================
+DB101 - ROBOT COMMUNICATION BUFFER
+==========================================
+
+Robot_Command	WORD	0	W#16#0	Lệnh gửi Robot
+Robot_Status	WORD	2	W#16#0	Trạng thái Robot
+Command_Active	BOOL	4.0	FALSE	Lệnh đang active
+Robot_Ready	BOOL	4.1	FALSE	Robot sẵn sàng
+Movement_Complete	BOOL	4.2	FALSE	Chuyển động hoàn tất
+Robot_Error	BOOL	4.3	FALSE	Lỗi Robot
+Target_X	DINT	6	L#0	Tọa độ X đích
+Target_Y	DINT	10	L#0	Tọa độ Y đích
+Target_Z	DINT	14	L#500	Tọa độ Z đích
+Target_RX	INT	18	0	Góc RX đích
+Target_RY	INT	20	0	Góc RY đích
+Target_RZ	INT	22	0	Góc RZ đích
+Current_X	DINT	24	L#0	Tọa độ X hiện tại
+Current_Y	DINT	28	L#0	Tọa độ Y hiện tại
+Current_Z	DINT	32	L#500	Tọa độ Z hiện tại
+Current_RX	INT	36	0	Góc RX hiện tại
+Current_RY	INT	38	0	Góc RY hiện tại
+Current_RZ	INT	40	0	Góc RZ hiện tại
+Movement_Speed	INT	42	100	Tốc độ chuyển động
+Acceleration	INT	44	50	Gia tốc
+Gripper_Status	INT	46	0	Trạng thái gripper
+Tool_Number	INT	48	1	Số tool
+Send_Request	BOOL	50.0	FALSE	Yêu cầu gửi
+Receive_Done	BOOL	50.1	FALSE	Nhận xong
+Timeout_Error	BOOL	50.2	FALSE	Lỗi timeout
+Comm_Error	BOOL	50.3	FALSE	Lỗi communication
+Send_Timestamp	TIME	52	T#0MS	Thời gian gửi
+Receive_Timestamp	TIME	56	T#0MS	Thời gian nhận
+Response_Time	TIME	60	T#0MS	Thời gian phản hồi
+Error_Code	WORD	64	W#16#0	Mã lỗi
+Error_Count	INT	66	0	Số lần lỗi
+Success_Count	DINT	68	L#0	Số lần thành công
+Reserved_1	WORD	72	W#16#0	Dự trữ mở rộng
+Reserved_2	WORD	74	W#16#0	Dự trữ mở rộng
+Reserved_3	WORD	76	W#16#0	Dự trữ mở rộng
+Reserved_4	WORD	78	W#16#0	Dự trữ mở rộng
+Reserved_5	WORD	80	W#16#0	Dự trữ mở rộng
+Reserved_6	WORD	82	W#16#0	Dự trữ mở rộng
+Reserved_7	WORD	84	W#16#0	Dự trữ mở rộng
+Reserved_8	WORD	86	W#16#0	Dự trữ mở rộng
+Reserved_9	WORD	88	W#16#0	Dự trữ mở rộng
+Reserved_10	WORD	90	W#16#0	Dự trữ mở rộng
+Reserved_11	WORD	92	W#16#0	Dự trữ mở rộng
+Reserved_12	WORD	94	W#16#0	Dự trữ mở rộng
+Reserved_13	WORD	96	W#16#0	Dự trữ mở rộng
+Reserved_14	WORD	98	W#16#0	Dự trữ mở rộng
+Reserved_15	WORD	100	W#16#0	Dự trữ mở rộng
+
+==========================================
+DB102 - SYSTEM STATUS & DIAGNOSTICS
+==========================================
+
+System_Mode	INT	0	1	Chế độ hệ thống
+PLC_Status	WORD	2	W#16#1	Trạng thái PLC
+Communication_Status	WORD	4	W#16#1	Trạng thái giao tiếp
+Overall_Health	INT	6	100	Tình trạng tổng thể (%)
+Cycle_Time_Current	TIME	8	T#50MS	Thời gian chu kỳ hiện tại
+Cycle_Time_Max	TIME	12	T#100MS	Thời gian chu kỳ tối đa
+Cycle_Time_Min	TIME	16	T#30MS	Thời gian chu kỳ tối thiểu
+Cycle_Time_Average	TIME	20	T#50MS	Thời gian chu kỳ trung bình
+Messages_Sent	DINT	24	L#0	Số message đã gửi
+Messages_Received	DINT	28	L#0	Số message đã nhận
+Communication_Errors	INT	32	0	Số lỗi giao tiếp
+Timeout_Count	INT	34	0	Số lần timeout
+Robot_Movements	DINT	36	L#0	Số lần di chuyển robot
+Robot_Errors	INT	40	0	Số lỗi robot
+Average_Movement_Time	TIME	42	T#2S	Thời gian di chuyển TB
+Last_Error_Code	WORD	46	W#16#0	Mã lỗi cuối
+Last_Error_Time	TIME	48	T#0MS	Thời gian lỗi cuối
+Error_History_1_Code	WORD	52	W#16#0	Lịch sử lỗi 1 - Mã lỗi
+Error_History_1_Time	TIME	54	T#0MS	Lịch sử lỗi 1 - Thời gian
+Error_History_1_Count	INT	58	0	Lịch sử lỗi 1 - Số lần
+Error_History_2_Code	WORD	60	W#16#0	Lịch sử lỗi 2 - Mã lỗi
+Error_History_2_Time	TIME	62	T#0MS	Lịch sử lỗi 2 - Thời gian
+Error_History_2_Count	INT	66	0	Lịch sử lỗi 2 - Số lần
+Error_History_3_Code	WORD	68	W#16#0	Lịch sử lỗi 3 - Mã lỗi
+Error_History_3_Time	TIME	70	T#0MS	Lịch sử lỗi 3 - Thời gian
+Error_History_3_Count	INT	74	0	Lịch sử lỗi 3 - Số lần
+Error_History_4_Code	WORD	76	W#16#0	Lịch sử lỗi 4 - Mã lỗi
+Error_History_4_Time	TIME	78	T#0MS	Lịch sử lỗi 4 - Thời gian
+Error_History_4_Count	INT	82	0	Lịch sử lỗi 4 - Số lần
+Error_History_5_Code	WORD	84	W#16#0	Lịch sử lỗi 5 - Mã lỗi
+Error_History_5_Time	TIME	86	T#0MS	Lịch sử lỗi 5 - Thời gian
+Error_History_5_Count	INT	90	0	Lịch sử lỗi 5 - Số lần
+Error_History_6_Code	WORD	92	W#16#0	Lịch sử lỗi 6 - Mã lỗi
+Error_History_6_Time	TIME	94	T#0MS	Lịch sử lỗi 6 - Thời gian
+Error_History_6_Count	INT	98	0	Lịch sử lỗi 6 - Số lần
+Error_History_7_Code	WORD	100	W#16#0	Lịch sử lỗi 7 - Mã lỗi
+Error_History_7_Time	TIME	102	T#0MS	Lịch sử lỗi 7 - Thời gian
+Error_History_7_Count	INT	106	0	Lịch sử lỗi 7 - Số lần
+Error_History_8_Code	WORD	108	W#16#0	Lịch sử lỗi 8 - Mã lỗi
+Error_History_8_Time	TIME	110	T#0MS	Lịch sử lỗi 8 - Thời gian
+Error_History_8_Count	INT	114	0	Lịch sử lỗi 8 - Số lần
+Error_History_9_Code	WORD	116	W#16#0	Lịch sử lỗi 9 - Mã lỗi
+Error_History_9_Time	TIME	118	T#0MS	Lịch sử lỗi 9 - Thời gian
+Error_History_9_Count	INT	122	0	Lịch sử lỗi 9 - Số lần
+Error_History_10_Code	WORD	124	W#16#0	Lịch sử lỗi 10 - Mã lỗi
+Error_History_10_Time	TIME	126	T#0MS	Lịch sử lỗi 10 - Thời gian
+Error_History_10_Count	INT	130	0	Lịch sử lỗi 10 - Số lần
+Memory_Usage	INT	132	45	Sử dụng bộ nhớ (%)
+CPU_Load	INT	134	30	Tải CPU (%)
+Temperature	INT	136	55	Nhiệt độ (°C)
+Voltage	INT	138	240	Điện áp (V*10)
+Operating_Hours	TIME	140	T#0MS	Giờ hoạt động
+Maintenance_Due	BOOL	144.0	FALSE	Cần bảo trì
+Calibration_Due	BOOL	144.1	FALSE	Cần hiệu chuẩn
+Backup_Required	BOOL	144.2	FALSE	Cần backup
+Reserved_1	WORD	146	W#16#0	Dự trữ mở rộng
+Reserved_2	WORD	148	W#16#0	Dự trữ mở rộng
+Reserved_3	WORD	150	W#16#0	Dự trữ mở rộng
+Reserved_4	WORD	152	W#16#0	Dự trữ mở rộng
+Reserved_5	WORD	154	W#16#0	Dự trữ mở rộng
+Reserved_6	WORD	156	W#16#0	Dự trữ mở rộng
+Reserved_7	WORD	158	W#16#0	Dự trữ mở rộng
+Reserved_8	WORD	160	W#16#0	Dự trữ mở rộng
+Reserved_9	WORD	162	W#16#0	Dự trữ mở rộng
+Reserved_10	WORD	164	W#16#0	Dự trữ mở rộng
+Reserved_11	WORD	166	W#16#0	Dự trữ mở rộng
+Reserved_12	WORD	168	W#16#0	Dự trữ mở rộng
+Reserved_13	WORD	170	W#16#0	Dự trữ mở rộng
+Reserved_14	WORD	172	W#16#0	Dự trữ mở rộng
+Reserved_15	WORD	174	W#16#0	Dự trữ mở rộng
+Reserved_16	WORD	176	W#16#0	Dự trữ mở rộng
+Reserved_17	WORD	178	W#16#0	Dự trữ mở rộng
+Reserved_18	WORD	180	W#16#0	Dự trữ mở rộng
+Reserved_19	WORD	182	W#16#0	Dự trữ mở rộng
+Reserved_20	WORD	184	W#16#0	Dự trữ mở rộng
+Reserved_21	WORD	186	W#16#0	Dự trữ mở rộng
+Reserved_22	WORD	188	W#16#0	Dự trữ mở rộng
+Reserved_23	WORD	190	W#16#0	Dự trữ mở rộng
+Reserved_24	WORD	192	W#16#0	Dự trữ mở rộng
+Reserved_25	WORD	194	W#16#0	Dự trữ mở rộng
+
+==========================================
+SUMMARY
+==========================================
+
+Total Variables:
+- DB100: 25 variables (62 bytes)
+- DB101: 42 variables (102 bytes)  
+- DB102: 70 variables (196 bytes)
+
+Total Memory Usage: 360 bytes
+
+==========================================
+USAGE INSTRUCTIONS
+==========================================
+
+1. SIMATIC MANAGER:
+   - Open Data Block Editor
+   - Select "Declaration" tab
+   - Copy and paste each section
+   - Format: Variable_Name [TAB] Type [TAB] Address [TAB] Initial_Value [TAB] Comment
+
+2. EXCEL/CSV IMPORT:
+   - Use TAB as delimiter
+   - First row: Variable_Name, Type, Address, Initial_Value, Comment
+   - Import to SIMATIC Manager
+
+3. MANUAL ENTRY:
+   - Use tabular format in Data Block Editor
+   - Each line represents one variable
+   - Follow the exact format shown
+
+==========================================

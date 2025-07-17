@@ -1,0 +1,404 @@
+SƠ ĐỒ LUỒNG    ┌──────────┐      │                                         │      ┌──────────┐
+   │  AREA 1  │      │                                         │      │  AREA 2  │
+   │ (LINE 1) │      │  ┌─────────────┐    ┌─────────────┐     │      │ (LINE 2) │
+   └─────┬────┘      │  │ CPU 412-3H  │    │ CPU 412-3H  │     │      └─────┬────┘
+         │           │  │  (Primary)  │◄──►│ (Secondary) │     │            │
+         │           │  │ + Memory    │    │ + Memory    │     │            │
+         │           │  │ + Sync Mod  │    │ + Sync Mod  │     │            │
+         │           │  └─────────────┘    └─────────────┘     │            │ HỆ THỐNG PALLETIZING PLC S7-400H + ROBOT ABB IRC5
+=================================================================================
+
+I. KIẾN TRÚC HỆ THỐNG CHI TIẾT
+===============================
+
+                     ┌─────────────────────────────────────────┐
+                     │          SIEMENS S7-400H PLC           │
+                     │        (High Availability System)       │
+         ┌───────────┼─────────────────────────────────────────┼───────────┐
+         │           │                                         │           │
+         ▼           │              OB1 - MAIN                 │           ▼
+   ┌──────────┐      │         (Cyclic Execution)              │      ┌──────────┐
+   │  AREA 1  │      │                                         │      │  AREA 2  │
+   │ (LINE 1) │      │  ┌─────────────┐    ┌─────────────┐     │      │ (LINE 2) │
+   └─────┬────┘      │  │ CPU 414-5H  │    │ CPU 414-5H  │     │      └─────┬────┘
+         │           │  │  (Primary)  │◄──►│ (Secondary) │     │            │
+         │           │  │ + Memory    │    │ + Memory    │     │            │
+         │           │  │ + Sync Mod  │    │ + Sync Mod  │     │            │
+         │           │  └─────────────┘    └─────────────┘     │            │
+         │           └─────────────────────────────────────────┘            │
+         │                                                                  │
+    ┌────▼────┐                   ┌─────────────┐                    ┌─────▼────┐
+    │ ROBOT   │◄─────PROFIBUS─────┤   SWITCH    ├─────PROFIBUS──────►│ ROBOT    │
+    │ ABB IRC5│                   │  ETHERNET   │                    │ ABB IRC5 │
+    │ AREA 1  │                   │   HMI/SCADA │                    │ AREA 2   │
+    └─────────┘                   └─────────────┘                    └──────────┘
+
+II. LUỒNG DỮ LIỆU CHI TIẾT
+===========================
+
+A. AREA 1 DATA FLOW:
+────────────────────
+
+Input Signals (I0.x - I5.x) 
+    │
+    ▼
+┌─────────────────────────────────────────┐
+│               FC50                      │
+│         (Main Control Logic)            │
+│                                         │
+│ • Safety monitoring (I0.0, I0.4)       │
+│ • Emergency stop handling               │
+│ • Mode selection (M16.0 - Auto mode)    │
+│ • Step sequencing                       │
+│ • Error code generation (DB10.DBW100)   │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│               FC51                      │
+│        (I/O Processing & Alarms)        │
+│                                         │
+│ • Timer management (FC8 calls)          │
+│ • Sensor validation                     │
+│ • Status feedback processing            │
+│ • Communication timeouts                │
+│ • Recipe data backup (DB6)              │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│               FC52                      │
+│       (Robot Communication)             │
+│                                         │
+│ • Handshake protocol with robot         │
+│ • Position data exchange                │
+│ • Status word transmission              │
+│ • Command acknowledgment                 │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│               FC53                      │
+│         (Position Control)              │
+│                                         │
+│ • Recipe position calculation           │
+│ • Coordinate transformation             │
+│ • Motion path planning                  │
+│ • Trajectory validation                 │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│               FC54                      │
+│        (Safety Interlocks)              │
+│                                         │
+│ • Light curtain monitoring (I65.5)      │
+│ • Robot safety signals                  │
+│ • Emergency stop circuits               │
+│ • Safe stop implementation              │
+│ • FB5 safety logic calls                │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│               FC55                      │
+│          (Data Logging)                 │
+│                                         │
+│ • Production counters                   │
+│ • Performance monitoring                │
+│ • Error logging                         │
+│ • Maintenance scheduling                │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+Output Signals (Q32.x - Q77.x) + Robot Interface
+
+B. AREA 2 DATA FLOW:
+────────────────────
+[Similar structure to Area 1, but with FC60-FC65 and different I/O addresses]
+
+III. DETAILED SIGNAL MAPPING
+=============================
+
+A. AREA 1 SIGNALS:
+──────────────────
+
+INPUTS:
+• I0.0, I0.4:    Emergency Stop Circuits
+• I0.1:          Start Button
+• I0.5:          Mode Selector
+• I1.x:          Conveyor sensors
+• I4.x:          Robot status inputs
+• I5.x:          Position feedback
+• I64.x:         Robot communication inputs
+• I65.5:         Light curtain (Common safety)
+
+OUTPUTS:
+• Q32.x:         Conveyor controls
+• Q36.x:         Robot command outputs
+• Q37.x:         Gripper/Tool controls
+• Q64.x:         Robot communication outputs
+• Q65.x:         Status lamps
+• Q77.x:         Safety outputs
+
+DATA EXCHANGE:
+• QW66:          Robot position command X
+• QW68:          Robot position command Y  
+• QW70:          Robot position command Z
+• QW72:          Robot orientation command
+• QW74:          Gripper command
+• IW70:          Robot position feedback
+
+B. AREA 2 SIGNALS:
+──────────────────
+
+INPUTS:
+• I12.0, I12.4:  Emergency Stop Circuits (Area 2)
+• I12.1:         Start Button (Area 2)
+• I12.5:         Mode Selector (Area 2)
+• I13.x:         Conveyor sensors (Area 2)
+• I16.x:         Robot status inputs (Area 2)
+• I17.x:         Position feedback (Area 2)
+• I164.x:        Robot communication inputs (Area 2)
+
+OUTPUTS:
+• Q44.x:         Conveyor controls (Area 2)
+• Q48.x:         Robot command outputs (Area 2)
+• Q49.x:         Gripper/Tool controls (Area 2)
+• Q164.x:        Robot communication outputs (Area 2)
+• Q165.x:        Status lamps (Area 2)
+• Q177.x:        Safety outputs (Area 2)
+
+IV. DETAILED OPERATION SEQUENCE
+================================
+
+A. SYSTEM STARTUP SEQUENCE:
+───────────────────────────
+
+1. POWER ON → OB100 (Warm Restart)
+   ├── System diagnostics
+   ├── Memory initialization
+   ├── I/O module check
+   └── Safety system validation
+
+2. COLD START → OB102 (Cold Restart)
+   ├── Complete memory clear
+   ├── Default parameter loading
+   ├── Recipe initialization
+   └── Communication setup
+
+3. READY STATE
+   ├── Area enable signals
+   ├── Robot communication established
+   ├── Safety systems active
+   └── Waiting for production command
+
+B. AUTOMATIC PRODUCTION CYCLE:
+──────────────────────────────
+
+AREA 1 CYCLE (M12.0 = TRUE):
+┌─────────────────────────────────────────┐
+│            CYCLE START                  │
+│  FC50: Check safety, Check recipe       │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│        PRODUCT DETECTION                │
+│  FC51: Conveyor sensors, Product type   │
+│        Recipe selection based on type   │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│      ROBOT POSITIONING                  │
+│  FC52: Send position to robot           │
+│  FC53: Calculate pick coordinates       │
+│        Wait for robot ready             │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│         PICK OPERATION                  │
+│  FC54: Safety check during motion       │
+│        Gripper control                  │
+│        Position feedback validation     │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│        PLACE OPERATION                  │
+│  FC53: Calculate place coordinates      │
+│        Execute palletizing pattern      │
+│        Update pallet count              │
+└─────────────┬───────────────────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────┐
+│         CYCLE COMPLETE                  │
+│  FC55: Log production data              │
+│        Update counters                  │
+│        Prepare for next cycle           │
+└─────────────────────────────────────────┘
+
+C. ERROR HANDLING DETAIL:
+─────────────────────────
+
+ERROR DETECTION:
+• FC50: Communication timeouts
+• FC51: Sensor failures
+• FC52: Robot communication errors
+• FC53: Position validation errors
+• FC54: Safety violations
+• FC55: Data logging errors
+
+ERROR CODES (DB10.DBW100):
+• 1:    System ready
+• 2-10: Operational states
+• 11-20: Warning conditions
+• 30-40: Error conditions
+• 50+:  Critical failures
+
+ERROR RECOVERY:
+• Automatic retry for minor errors
+• Operator intervention for major errors
+• Emergency stop for safety violations
+• Complete system reset for critical failures
+
+V. COMMUNICATION PROTOCOLS
+===========================
+
+A. PLC ↔ ROBOT COMMUNICATION:
+─────────────────────────────
+
+HANDSHAKE PROTOCOL:
+1. PLC sets command ready (Q64.4/Q164.4)
+2. Robot acknowledges ready (I64.1/I164.1)  
+3. PLC sends position data
+4. Robot confirms reception
+5. Robot executes motion
+6. Robot signals completion
+7. PLC acknowledges and prepares next cycle
+
+DATA STRUCTURE:
+• Position commands: QW registers
+• Status feedback: IW registers
+• Control bits: Digital I/O
+• Error codes: Dedicated memory areas
+
+B. HMI COMMUNICATION:
+────────────────────
+
+• Real-time production monitoring
+• Recipe management interface
+• Alarm and event logging
+• Performance analytics
+• Manual control capabilities
+
+VI. ADVANCED FEATURES
+=====================
+
+A. REDUNDANCY MANAGEMENT:
+────────────────────────
+• S7-400H Redundant CPU configuration (CPU 412-3H)
+• Automatic hot-standby failover (<100ms)
+• Continuous memory synchronization
+• Dual power supply redundancy
+• Redundant I/O modules (ET 200M)
+• Fiber optic sync cables between CPUs
+• Bumpless transfer during CPU switchover
+• Real-time diagnostics of redundant components
+
+B. DIAGNOSTIC CAPABILITIES:
+──────────────────────────
+• FC102/FC112: Area-specific diagnostics
+• Real-time performance monitoring
+• Predictive maintenance algorithms
+• Component health monitoring
+
+C. RECIPE MANAGEMENT:
+────────────────────
+• FC103/FC113: Recipe handling
+• Dynamic recipe loading
+• Pattern optimization
+• Product-specific palletizing
+
+VII. SAFETY ARCHITECTURE
+=========================
+
+SAFETY CATEGORY: SIL 2 (Safety Integrity Level 2)
+
+SAFETY FUNCTIONS:
+• Emergency stop (Category 0 + Category 1)
+• Light curtain monitoring
+• Safe speed monitoring
+• Safe position monitoring
+• Two-hand control for manual mode
+
+SAFETY I/O:
+• Distributed safety modules
+• Failsafe communication
+• Diagnostic coverage >90%
+• Proof test interval: 12 months
+
+Ghi chú: Hệ thống được thiết kế theo tiêu chuẩn IEC 61508 
+và đáp ứng các yêu cầu an toàn công nghiệp quốc tế.
+
+VIII. S7-400H REDUNDANCY ARCHITECTURE
+======================================
+
+A. HARDWARE CONFIGURATION:
+──────────────────────────
+• CPU 412-3H Primary + Secondary (identical configuration)
+• Sync modules for CPU communication (fiber optic)
+• Redundant power supplies (PS 407 10A)
+• Redundant I/O modules via ET 200M
+• Switch modules for redundant communication
+• Dedicated sync cables (glass fiber)
+
+B. REDUNDANCY OPERATION:
+───────────────────────
+• Master/Standby configuration
+• Continuous memory synchronization
+• Automatic error detection and failover
+• Bumpless transfer (<100ms)
+• Diagnostic data exchange
+• Event logging of switchovers
+
+C. FAILOVER SCENARIOS:
+─────────────────────
+• CPU failure detection
+• Power supply failure
+• Communication link failure  
+• I/O module failure
+• Automatic switchover to standby CPU
+• Alarm notification to operators
+• Continued operation without interruption
+
+D. SYNC MONITORING:
+─────────────────
+• Real-time sync status via LEDs
+• Diagnostic data in OB status
+• Sync error detection and handling
+• Automatic resynchronization
+• Manual sync control capabilities
+
+E. MAINTENANCE ADVANTAGES:
+────────────────────────
+• Online CPU replacement possible
+• Hot-swappable I/O modules
+• Firmware updates without production stop
+• Reduced planned downtime
+• Enhanced system availability >99.9%
+
+F. CPU 412-3H SPECIFICATIONS:
+────────────────────────────
+• Work memory: 2 MB integrated
+• Load memory: 8 MB (expandable with MMC)
+• Processing speed: Bit operations: 0.1 μs
+• Built-in interfaces: 2x MPI/PROFIBUS-DP
+• Redundancy capability: Hot-standby operation
+• Max I/O capacity: 8192 digital inputs/outputs
+• Communication: PROFIBUS, Ethernet via CP modules
+• Operating temperature: 0°C to +60°C
+• Certification: CE, UL, CSA approved

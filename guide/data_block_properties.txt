@@ -1,0 +1,1281 @@
+HƯỚNG DẪN CẤU HÌNH DATA BLOCK SIEMENS S7-400H
+=============================================
+Dành cho hệ thống Palletizing PLC S7-400H + Robot ABB IRC5
+Phiên bản: 1.0 - Ngày: 17/07/2025
+
+==========================================
+I. TỔNG QUAN VỀ DATA BLOCK
+==========================================
+
+DATA BLOCK là thành phần cơ bản trong PLC Siemens S7-400H dùng để lưu trữ dữ liệu, 
+parameters và biến toàn cục. Trong hệ thống palletizing, Data Block tổ chức dữ liệu 
+theo từng khu vực và chức năng riêng biệt.
+
+CẤU TRÚC DATA BLOCK:
+```
+DATA_BLOCK DB [Number] VERSION : [Version]
+STRUCT
+    [Variable definitions]
+END_STRUCT
+BEGIN
+    [Initial values]
+END_DATA_BLOCK
+```
+
+==========================================
+II. PHÂN LOẠI DATA BLOCK TRONG HỆ THỐNG
+==========================================
+
+A. DATA BLOCK HỆ THỐNG (DB1-DB10):
+──────────────────────────────────
+- DB1: System Configuration Data
+- DB2: Global Parameters  
+- DB5: Area 1 Configuration
+- DB6: Area 1 Process Data
+- DB7: Area 1 Recipe Data
+- DB10: Area 1 Control Data
+
+B. DATA BLOCK AREA 2 (DB55-DB60):
+─────────────────────────────────
+- DB55: Area 2 Configuration
+- DB56: Area 2 Process Data
+- DB57: Area 2 Recipe Data
+- DB60: Area 2 Control Data
+
+C. DATA BLOCK TRAO ĐỔI TỌA ĐỘ (DB100-DB102):
+─────────────────────────────────────────────
+- DB100: Laptop Communication Interface
+- DB101: Robot Communication Buffer
+- DB102: System Status & Diagnostics
+
+==========================================
+III. HƯỚNG DẪN CẤU HÌNH CHI TIẾT
+==========================================
+
+A. CÁCH TẠO DATA BLOCK MỚI:
+──────────────────────────
+
+1. MỞ SIMATIC MANAGER:
+   - Khởi động SIMATIC Manager
+   - Mở project S7-400H
+   - Double-click vào CPU 412-3H
+
+2. TẠO DATA BLOCK:
+   - Right-click vào "Blocks" folder
+   - Chọn "Insert New Object" → "Data Block"
+   - Nhập số DB (ví dụ: DB100)
+   - Chọn "Data Block" type
+   - Click "OK"
+
+3. CẤU HÌNH PROPERTIES:
+   - Name: DB100_CoordinateExchange
+   - Type: Data Block
+   - Language: DB
+   - Version: 0.1
+   - Author: [Your name]
+   - Comment: "Coordinate Exchange Interface"
+
+B. ĐỊNH NGHĨA CẤU TRÚC DATA:
+──────────────────────────
+
+1. CÚ PHÁP CƠ BẢN (NGÔN NGỮ DB):
+```
+TRONG SIMATIC MANAGER - DATA BLOCK EDITOR:
+
+1. Mở Data Block → chọn "Declaration" tab
+2. Nhập variables theo format sau:
+
+Name                    Type         Address    Initial Value    Comment
+────────────────────────────────────────────────────────────────────────────────
+Command_Word            WORD         0.0        W#16#0          Lệnh từ Laptop
+Status_Word             WORD         2.0        W#16#1          Trạng thái phản hồi
+Area_Selection          INT          4.0        1               Chọn khu vực (1 hoặc 2)
+Coordinate_Set          INT          6.0        1               Bộ tọa độ số (1-10)
+X_Coordinate            DINT         8.0        L#0             Tọa độ X (mm)
+Y_Coordinate            DINT         12.0       L#0             Tọa độ Y (mm)
+Z_Coordinate            DINT         16.0       L#0             Tọa độ Z (mm)
+RX_Rotation             INT          20.0       0               Góc quay RX (degrees*100)
+RY_Rotation             INT          22.0       0               Góc quay RY (degrees*100)
+RZ_Rotation             INT          24.0       0               Góc quay RZ (degrees*100)
+Gripper_Command         INT          26.0       0               Lệnh gripper
+Speed_Override          INT          28.0       100             Tốc độ override (%)
+Timestamp               TIME         30.0       T#0MS           Timestamp
+Error_Code              WORD         34.0       W#16#0          Mã lỗi
+Reserved                ARRAY[1..10] OF WORD  36.0  -          Dữ liệu dự trữ
+
+CHÚ THÍCH ADDRESS:
+- Address tự động được SIMATIC Manager assign
+- Format: Byte.Bit (ví dụ: 0.0 = Byte 0, Bit 0)
+- WORD: 2 bytes (16 bits)
+- DINT: 4 bytes (32 bits)
+- TIME: 4 bytes (32 bits)
+- ARRAY[1..10] OF WORD: 20 bytes (10 x 2 bytes)
+
+HOẶC CÁCH NHẬP TEXT MODE:
+Command_Word : WORD := W#16#0;           // DBW0  - Lệnh từ Laptop
+Status_Word : WORD := W#16#1;            // DBW2  - Trạng thái phản hồi
+Area_Selection : INT := 1;               // DBW4  - Chọn khu vực (1 hoặc 2)
+Coordinate_Set : INT := 1;               // DBW6  - Bộ tọa độ số (1-10)
+X_Coordinate : DINT := L#0;              // DBD8  - Tọa độ X (mm)
+Y_Coordinate : DINT := L#0;              // DBD12 - Tọa độ Y (mm)
+Z_Coordinate : DINT := L#0;              // DBD16 - Tọa độ Z (mm)
+RX_Rotation : INT := 0;                  // DBW20 - Góc quay RX (degrees*100)
+RY_Rotation : INT := 0;                  // DBW22 - Góc quay RY (degrees*100)
+RZ_Rotation : INT := 0;                  // DBW24 - Góc quay RZ (degrees*100)
+Gripper_Command : INT := 0;              // DBW26 - Lệnh gripper
+Speed_Override : INT := 100;             // DBW28 - Tốc độ override (%)
+Timestamp : TIME := T#0MS;               // DBD30 - Timestamp
+Error_Code : WORD := W#16#0;             // DBW34 - Mã lỗi
+Reserved : ARRAY[1..10] OF WORD;         // DBW36-54 - Dữ liệu dự trữ
+```
+
+2. KIỂU DỮ LIỆU THÔNG DỤNG:
+```
+BOOL     : 1 bit      (TRUE/FALSE)
+BYTE     : 8 bits     (B#16#00 to B#16#FF)
+WORD     : 16 bits    (W#16#0000 to W#16#FFFF)
+DWORD    : 32 bits    (DW#16#00000000 to DW#16#FFFFFFFF)
+INT      : 16 bits    (-32768 to 32767)
+DINT     : 32 bits    (-2147483648 to 2147483647)
+REAL     : 32 bits    (IEEE 754 floating point)
+TIME     : 32 bits    (T#0MS to T#24D20H31M23S647MS)
+STRING   : Variable   (STRING[length])
+ARRAY    : Variable   (ARRAY[start..end] OF type)
+```
+
+3. VÍ DỤ STRUCT PHỨC TẠP (NGÔN NGỮ DB):
+```
+TRONG SIMATIC MANAGER - DATA BLOCK EDITOR:
+
+1. TẠO STRUCT CHO ROBOT POSITIONS:
+Name                    Type                    Address    Initial Value    Comment
+────────────────────────────────────────────────────────────────────────────────────
+Robot_Positions         ARRAY[1..10] OF STRUCT   0.0        -             Vị trí robot
+  X                     DINT                    0.0        L#0             Tọa độ X
+  Y                     DINT                    4.0        L#0             Tọa độ Y  
+  Z                     DINT                    8.0        L#0             Tọa độ Z
+  RX                    INT                     12.0       0               Góc RX
+  RY                    INT                     14.0       0               Góc RY
+  RZ                    INT                     16.0       0               Góc RZ
+  Valid                 BOOL                    18.0       FALSE           Hợp lệ
+END_STRUCT
+
+2. TẠO STRUCT CHO SYSTEM STATUS:
+Name                    Type         Address    Initial Value    Comment
+────────────────────────────────────────────────────────────────────────────────
+System_Status           STRUCT       0.0        -               Trạng thái hệ thống
+  Emergency_Stop        BOOL         0.0        FALSE           Dừng khẩn cấp
+  Safety_OK             BOOL         0.1        TRUE            An toàn OK
+  Robot_Ready           BOOL         0.2        FALSE           Robot sẵn sàng
+  PLC_Mode              INT          2.0        1               Chế độ PLC
+  Cycle_Time            TIME         4.0        T#50MS          Thời gian chu kỳ
+  Error_Count           INT          8.0        0               Số lỗi
+END_STRUCT
+
+CHÚ THÍCH ADDRESS CHO STRUCT:
+- Mỗi element trong ARRAY có offset riêng
+- STRUCT có base address, các member có relative offset
+- BOOL variables được pack theo bit (0.0, 0.1, 0.2...)
+- Alignment tự động được SIMATIC Manager xử lý
+
+HOẶC CÁCH NHẬP TEXT MODE:
+Robot_Positions : ARRAY[1..10] OF STRUCT    // Address: varies by array index
+    X : DINT := L#0;                         // +0: Tọa độ X
+    Y : DINT := L#0;                         // +4: Tọa độ Y
+    Z : DINT := L#0;                         // +8: Tọa độ Z
+    RX : INT := 0;                           // +12: Góc RX
+    RY : INT := 0;                           // +14: Góc RY
+    RZ : INT := 0;                           // +16: Góc RZ
+    Valid : BOOL := FALSE;                   // +18: Hợp lệ
+END_STRUCT;
+
+System_Status : STRUCT                       // Base address
+    Emergency_Stop : BOOL := FALSE;          // +0.0: Dừng khẩn cấp
+    Safety_OK : BOOL := TRUE;                // +0.1: An toàn OK
+    Robot_Ready : BOOL := FALSE;             // +0.2: Robot sẵn sàng
+    PLC_Mode : INT := 1;                     // +2: Chế độ PLC
+    Cycle_Time : TIME := T#50MS;             // +4: Thời gian chu kỳ
+    Error_Count : INT := 0;                  // +8: Số lỗi
+END_STRUCT;
+```
+
+==========================================
+IV. CẤU HÌNH DATA BLOCK THEO TỪNG LOẠI
+==========================================
+
+A. DB100 - LAPTOP COMMUNICATION INTERFACE:
+──────────────────────────────────────────
+
+TÍNH NĂNG:
+- Nhận lệnh từ Laptop
+- Gửi status về Laptop
+- Buffer tọa độ robot
+- Error handling
+
+BẢNG CẤU HÌNH DB100:
+```
+┌─────────────────────────┬──────────┬─────────┬────────────────┬─────────────────────────────────┐
+│     Variable Name       │   Type   │ Address │ Initial Value  │           Comment               │
+├─────────────────────────┼──────────┼─────────┼────────────────┼─────────────────────────────────┤
+│ Command_Word            │   WORD   │  DBW0   │   W#16#0       │ Lệnh từ Laptop                  │
+│ Status_Word             │   WORD   │  DBW2   │   W#16#1       │ Trạng thái PLC                  │
+│ Handshake               │   BOOL   │  DBX4.0 │   FALSE        │ Handshake bit                   │
+│ Data_Valid              │   BOOL   │  DBX4.1 │   FALSE        │ Dữ liệu hợp lệ                 │
+│ Error_Flag              │   BOOL   │  DBX4.2 │   FALSE        │ Cờ lỗi                         │
+│ Reserved_Bits           │   BOOL   │  DBX4.3 │   FALSE        │ Dự trữ (4.3-4.7)               │
+│ Area_Selection          │   INT    │  DBW6   │   1            │ Khu vực (1=Area1, 2=Area2)     │
+│ Coordinate_Set          │   INT    │  DBW8   │   1            │ Bộ tọa độ (1-10)               │
+│ X_Coordinate            │   DINT   │  DBD10  │   L#0          │ Tọa độ X (mm)                   │
+│ Y_Coordinate            │   DINT   │  DBD14  │   L#0          │ Tọa độ Y (mm)                   │
+│ Z_Coordinate            │   DINT   │  DBD18  │   L#500        │ Tọa độ Z (mm)                   │
+│ RX_Rotation             │   INT    │  DBW22  │   0            │ Góc RX (degrees*100)            │
+│ RY_Rotation             │   INT    │  DBW24  │   0            │ Góc RY (degrees*100)            │
+│ RZ_Rotation             │   INT    │  DBW26  │   0            │ Góc RZ (degrees*100)            │
+│ Gripper_Command         │   INT    │  DBW28  │   0            │ Lệnh gripper                    │
+│ Speed_Override          │   INT    │  DBW30  │   100          │ Tốc độ (10-100%)               │
+│ Timestamp               │   TIME   │  DBD32  │   T#0MS        │ Timestamp                       │
+│ Error_Code              │   WORD   │  DBW36  │   W#16#0       │ Mã lỗi                          │
+│ Cycle_Counter           │   DINT   │  DBD38  │   L#0          │ Bộ đếm chu kỳ                   │
+│ Reserved[1]             │   WORD   │  DBW42  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[2]             │   WORD   │  DBW44  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[3]             │   WORD   │  DBW46  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[4]             │   WORD   │  DBW48  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[5]             │   WORD   │  DBW50  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[6]             │   WORD   │  DBW52  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[7]             │   WORD   │  DBW54  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[8]             │   WORD   │  DBW56  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[9]             │   WORD   │  DBW58  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[10]            │   WORD   │  DBW60  │   W#16#0       │ Dự trữ mở rộng                  │
+└─────────────────────────┴──────────┴─────────┴────────────────┴─────────────────────────────────┘
+```
+
+TỔNG KÍCH THƯỚC DB100: 62 bytes
+
+CẤU HÌNH:
+```
+DATA_BLOCK DB 100 VERSION : 0.1
+
+STRUCT
+    // Communication Control
+    Command_Word : WORD;           // DBW0: Lệnh từ Laptop
+    Status_Word : WORD;            // DBW2: Trạng thái PLC
+    Handshake : BOOL;              // DBX4.0: Handshake bit
+    Data_Valid : BOOL;             // DBX4.1: Dữ liệu hợp lệ
+    Error_Flag : BOOL;             // DBX4.2: Cờ lỗi
+    Reserved_Bits : BOOL;          // DBX4.3-4.7: Dự trữ
+    
+    // Area and Set Selection
+    Area_Selection : INT;          // DBW6: Khu vực (1=Area1, 2=Area2)
+    Coordinate_Set : INT;          // DBW8: Bộ tọa độ (1-10)
+    
+    // Robot Coordinates
+    X_Coordinate : DINT;           // DBD10: Tọa độ X (mm)
+    Y_Coordinate : DINT;           // DBD14: Tọa độ Y (mm)
+    Z_Coordinate : DINT;           // DBD18: Tọa độ Z (mm)
+    RX_Rotation : INT;             // DBW22: Góc RX (degrees*100)
+    RY_Rotation : INT;             // DBW24: Góc RY (degrees*100)
+    RZ_Rotation : INT;             // DBW26: Góc RZ (degrees*100)
+    
+    // Robot Control
+    Gripper_Command : INT;         // DBW28: Lệnh gripper
+    Speed_Override : INT;          // DBW30: Tốc độ (10-100%)
+    
+    // System Information
+    Timestamp : TIME;              // DBD32: Timestamp
+    Error_Code : WORD;             // DBW36: Mã lỗi
+    Cycle_Counter : DINT;          // DBD38: Bộ đếm chu kỳ
+    
+    // Reserved for expansion
+    Reserved : ARRAY[1..10] OF WORD; // DBW42-60: Dự trữ
+END_STRUCT
+
+BEGIN
+    Command_Word := W#16#0;
+    Status_Word := W#16#1;         // Ready
+    Handshake := FALSE;
+    Data_Valid := FALSE;
+    Error_Flag := FALSE;
+    Area_Selection := 1;
+    Coordinate_Set := 1;
+    X_Coordinate := L#0;
+    Y_Coordinate := L#0;
+    Z_Coordinate := L#500;         // Default Z height
+    RX_Rotation := 0;
+    RY_Rotation := 0;
+    RZ_Rotation := 0;
+    Gripper_Command := 0;
+    Speed_Override := 100;
+    Timestamp := T#0MS;
+    Error_Code := W#16#0;
+    Cycle_Counter := L#0;
+    Reserved[1] := W#16#0;
+    Reserved[2] := W#16#0;
+    Reserved[3] := W#16#0;
+    Reserved[4] := W#16#0;
+    Reserved[5] := W#16#0;
+    Reserved[6] := W#16#0;
+    Reserved[7] := W#16#0;
+    Reserved[8] := W#16#0;
+    Reserved[9] := W#16#0;
+    Reserved[10] := W#16#0;
+END_DATA_BLOCK
+```
+
+B. DB101 - ROBOT COMMUNICATION BUFFER:
+──────────────────────────────────────
+
+TÍNH NĂNG:
+- Buffer dữ liệu gửi đến Robot
+- Nhận feedback từ Robot
+- Synchronization control
+- Position monitoring
+
+BẢNG CẤU HÌNH DB101:
+```
+┌─────────────────────────┬──────────┬─────────┬────────────────┬─────────────────────────────────┐
+│     Variable Name       │   Type   │ Address │ Initial Value  │           Comment               │
+├─────────────────────────┼──────────┼─────────┼────────────────┼─────────────────────────────────┤
+│ Robot_Command           │   WORD   │  DBW0   │   W#16#0       │ Lệnh gửi Robot                  │
+│ Robot_Status            │   WORD   │  DBW2   │   W#16#0       │ Trạng thái Robot                │
+│ Command_Active          │   BOOL   │  DBX4.0 │   FALSE        │ Lệnh đang active                │
+│ Robot_Ready             │   BOOL   │  DBX4.1 │   FALSE        │ Robot sẵn sàng                  │
+│ Movement_Complete       │   BOOL   │  DBX4.2 │   FALSE        │ Chuyển động hoàn tất            │
+│ Robot_Error             │   BOOL   │  DBX4.3 │   FALSE        │ Lỗi Robot                       │
+│ Target_X                │   DINT   │  DBD6   │   L#0          │ Tọa độ X đích                   │
+│ Target_Y                │   DINT   │  DBD10  │   L#0          │ Tọa độ Y đích                   │
+│ Target_Z                │   DINT   │  DBD14  │   L#500        │ Tọa độ Z đích                   │
+│ Target_RX               │   INT    │  DBW18  │   0            │ Góc RX đích                     │
+│ Target_RY               │   INT    │  DBW20  │   0            │ Góc RY đích                     │
+│ Target_RZ               │   INT    │  DBW22  │   0            │ Góc RZ đích                     │
+│ Current_X               │   DINT   │  DBD24  │   L#0          │ Tọa độ X hiện tại               │
+│ Current_Y               │   DINT   │  DBD28  │   L#0          │ Tọa độ Y hiện tại               │
+│ Current_Z               │   DINT   │  DBD32  │   L#500        │ Tọa độ Z hiện tại               │
+│ Current_RX              │   INT    │  DBW36  │   0            │ Góc RX hiện tại                 │
+│ Current_RY              │   INT    │  DBW38  │   0            │ Góc RY hiện tại                 │
+│ Current_RZ              │   INT    │  DBW40  │   0            │ Góc RZ hiện tại                 │
+│ Movement_Speed          │   INT    │  DBW42  │   100          │ Tốc độ chuyển động              │
+│ Acceleration            │   INT    │  DBW44  │   50           │ Gia tốc                         │
+│ Gripper_Status          │   INT    │  DBW46  │   0            │ Trạng thái gripper              │
+│ Tool_Number             │   INT    │  DBW48  │   1            │ Số tool                         │
+│ Send_Request            │   BOOL   │  DBX50.0│   FALSE        │ Yêu cầu gửi                     │
+│ Receive_Done            │   BOOL   │  DBX50.1│   FALSE        │ Nhận xong                       │
+│ Timeout_Error           │   BOOL   │  DBX50.2│   FALSE        │ Lỗi timeout                     │
+│ Comm_Error              │   BOOL   │  DBX50.3│   FALSE        │ Lỗi communication               │
+│ Send_Timestamp          │   TIME   │  DBD52  │   T#0MS        │ Thời gian gửi                   │
+│ Receive_Timestamp       │   TIME   │  DBD56  │   T#0MS        │ Thời gian nhận                  │
+│ Response_Time           │   TIME   │  DBD60  │   T#0MS        │ Thời gian phản hồi              │
+│ Error_Code              │   WORD   │  DBW64  │   W#16#0       │ Mã lỗi                          │
+│ Error_Count             │   INT    │  DBW66  │   0            │ Số lần lỗi                      │
+│ Success_Count           │   DINT   │  DBD68  │   L#0          │ Số lần thành công               │
+│ Reserved[1]             │   WORD   │  DBW72  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[2]             │   WORD   │  DBW74  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[3]             │   WORD   │  DBW76  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[4]             │   WORD   │  DBW78  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[5]             │   WORD   │  DBW80  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[6]             │   WORD   │  DBW82  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[7]             │   WORD   │  DBW84  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[8]             │   WORD   │  DBW86  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[9]             │   WORD   │  DBW88  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[10]            │   WORD   │  DBW90  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[11]            │   WORD   │  DBW92  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[12]            │   WORD   │  DBW94  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[13]            │   WORD   │  DBW96  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[14]            │   WORD   │  DBW98  │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[15]            │   WORD   │  DBW100 │   W#16#0       │ Dự trữ mở rộng                  │
+└─────────────────────────┴──────────┴─────────┴────────────────┴─────────────────────────────────┘
+```
+
+TỔNG KÍCH THƯỚC DB101: 102 bytes
+
+CẤU HÌNH:
+```
+DATA_BLOCK DB 101 VERSION : 0.1
+
+STRUCT
+    // Robot Command Interface
+    Robot_Command : WORD;          // DBW0: Lệnh gửi Robot
+    Robot_Status : WORD;           // DBW2: Trạng thái Robot
+    Command_Active : BOOL;         // DBX4.0: Lệnh đang active
+    Robot_Ready : BOOL;            // DBX4.1: Robot sẵn sàng
+    Movement_Complete : BOOL;      // DBX4.2: Chuyển động hoàn tất
+    Robot_Error : BOOL;            // DBX4.3: Lỗi Robot
+    
+    // Position Data to Robot
+    Target_X : DINT;               // DBD6: Tọa độ X đích
+    Target_Y : DINT;               // DBD10: Tọa độ Y đích
+    Target_Z : DINT;               // DBD14: Tọa độ Z đích
+    Target_RX : INT;               // DBW18: Góc RX đích
+    Target_RY : INT;               // DBW20: Góc RY đích
+    Target_RZ : INT;               // DBW22: Góc RZ đích
+    
+    // Current Position from Robot
+    Current_X : DINT;              // DBD24: Tọa độ X hiện tại
+    Current_Y : DINT;              // DBD28: Tọa độ Y hiện tại
+    Current_Z : DINT;              // DBD32: Tọa độ Z hiện tại
+    Current_RX : INT;              // DBW36: Góc RX hiện tại
+    Current_RY : INT;              // DBW38: Góc RY hiện tại
+    Current_RZ : INT;              // DBW40: Góc RZ hiện tại
+    
+    // Robot Control Parameters
+    Movement_Speed : INT;          // DBW42: Tốc độ chuyển động
+    Acceleration : INT;            // DBW44: Gia tốc
+    Gripper_Status : INT;          // DBW46: Trạng thái gripper
+    Tool_Number : INT;             // DBW48: Số tool
+    
+    // Communication Control
+    Send_Request : BOOL;           // DBX50.0: Yêu cầu gửi
+    Receive_Done : BOOL;           // DBX50.1: Nhận xong
+    Timeout_Error : BOOL;          // DBX50.2: Lỗi timeout
+    Comm_Error : BOOL;             // DBX50.3: Lỗi communication
+    
+    // Timing Control
+    Send_Timestamp : TIME;         // DBD52: Thời gian gửi
+    Receive_Timestamp : TIME;      // DBD56: Thời gian nhận
+    Response_Time : TIME;          // DBD60: Thời gian phản hồi
+    
+    // Error and Diagnostics
+    Error_Code : WORD;             // DBW64: Mã lỗi
+    Error_Count : INT;             // DBW66: Số lần lỗi
+    Success_Count : DINT;          // DBD68: Số lần thành công
+    
+    // Reserved
+    Reserved : ARRAY[1..15] OF WORD; // DBW72-100: Dự trữ
+END_STRUCT
+
+BEGIN
+    Robot_Command := W#16#0;
+    Robot_Status := W#16#0;
+    Command_Active := FALSE;
+    Robot_Ready := FALSE;
+    Movement_Complete := FALSE;
+    Robot_Error := FALSE;
+    Target_X := L#0;
+    Target_Y := L#0;
+    Target_Z := L#500;
+    Target_RX := 0;
+    Target_RY := 0;
+    Target_RZ := 0;
+    Current_X := L#0;
+    Current_Y := L#0;
+    Current_Z := L#500;
+    Current_RX := 0;
+    Current_RY := 0;
+    Current_RZ := 0;
+    Movement_Speed := 100;
+    Acceleration := 50;
+    Gripper_Status := 0;
+    Tool_Number := 1;
+    Send_Request := FALSE;
+    Receive_Done := FALSE;
+    Timeout_Error := FALSE;
+    Comm_Error := FALSE;
+    Send_Timestamp := T#0MS;
+    Receive_Timestamp := T#0MS;
+    Response_Time := T#0MS;
+    Error_Code := W#16#0;
+    Error_Count := 0;
+    Success_Count := L#0;
+    Reserved[1] := W#16#0;
+    Reserved[2] := W#16#0;
+    Reserved[3] := W#16#0;
+    Reserved[4] := W#16#0;
+    Reserved[5] := W#16#0;
+    Reserved[6] := W#16#0;
+    Reserved[7] := W#16#0;
+    Reserved[8] := W#16#0;
+    Reserved[9] := W#16#0;
+    Reserved[10] := W#16#0;
+    Reserved[11] := W#16#0;
+    Reserved[12] := W#16#0;
+    Reserved[13] := W#16#0;
+    Reserved[14] := W#16#0;
+    Reserved[15] := W#16#0;
+END_DATA_BLOCK
+```
+
+C. DB102 - SYSTEM STATUS & DIAGNOSTICS:
+───────────────────────────────────────
+
+TÍNH NĂNG:
+- Monitor trạng thái hệ thống
+- Lưu log events
+- Performance monitoring
+- Error diagnostics
+
+BẢNG CẤU HÌNH DB102:
+```
+┌─────────────────────────┬──────────┬─────────┬────────────────┬─────────────────────────────────┐
+│     Variable Name       │   Type   │ Address │ Initial Value  │           Comment               │
+├─────────────────────────┼──────────┼─────────┼────────────────┼─────────────────────────────────┤
+│ System_Mode             │   INT    │  DBW0   │   1            │ Chế độ hệ thống                 │
+│ PLC_Status              │   WORD   │  DBW2   │   W#16#1       │ Trạng thái PLC                  │
+│ Communication_Status    │   WORD   │  DBW4   │   W#16#1       │ Trạng thái giao tiếp            │
+│ Overall_Health          │   INT    │  DBW6   │   100          │ Tình trạng tổng thể (%)        │
+│ Cycle_Time_Current      │   TIME   │  DBD8   │   T#50MS       │ Thời gian chu kỳ hiện tại       │
+│ Cycle_Time_Max          │   TIME   │  DBD12  │   T#100MS      │ Thời gian chu kỳ tối đa         │
+│ Cycle_Time_Min          │   TIME   │  DBD16  │   T#30MS       │ Thời gian chu kỳ tối thiểu      │
+│ Cycle_Time_Average      │   TIME   │  DBD20  │   T#50MS       │ Thời gian chu kỳ trung bình     │
+│ Messages_Sent           │   DINT   │  DBD24  │   L#0          │ Số message đã gửi               │
+│ Messages_Received       │   DINT   │  DBD28  │   L#0          │ Số message đã nhận              │
+│ Communication_Errors    │   INT    │  DBW32  │   0            │ Số lỗi giao tiếp                │
+│ Timeout_Count           │   INT    │  DBW34  │   0            │ Số lần timeout                  │
+│ Robot_Movements         │   DINT   │  DBD36  │   L#0          │ Số lần di chuyển robot          │
+│ Robot_Errors            │   INT    │  DBW40  │   0            │ Số lỗi robot                    │
+│ Average_Movement_Time   │   TIME   │  DBD42  │   T#2S         │ Thời gian di chuyển TB          │
+│ Last_Error_Code         │   WORD   │  DBW46  │   W#16#0       │ Mã lỗi cuối                     │
+│ Last_Error_Time         │   TIME   │  DBD48  │   T#0MS        │ Thời gian lỗi cuối              │
+│ Error_History[1].Code   │   WORD   │  DBW52  │   W#16#0       │ Lịch sử lỗi 1 - Mã lỗi         │
+│ Error_History[1].Time   │   TIME   │  DBD54  │   T#0MS        │ Lịch sử lỗi 1 - Thời gian      │
+│ Error_History[1].Count  │   INT    │  DBW58  │   0            │ Lịch sử lỗi 1 - Số lần         │
+│ Error_History[2].Code   │   WORD   │  DBW60  │   W#16#0       │ Lịch sử lỗi 2 - Mã lỗi         │
+│ Error_History[2].Time   │   TIME   │  DBD62  │   T#0MS        │ Lịch sử lỗi 2 - Thời gian      │
+│ Error_History[2].Count  │   INT    │  DBW66  │   0            │ Lịch sử lỗi 2 - Số lần         │
+│ Error_History[3].Code   │   WORD   │  DBW68  │   W#16#0       │ Lịch sử lỗi 3 - Mã lỗi         │
+│ Error_History[3].Time   │   TIME   │  DBD70  │   T#0MS        │ Lịch sử lỗi 3 - Thời gian      │
+│ Error_History[3].Count  │   INT    │  DBW74  │   0            │ Lịch sử lỗi 3 - Số lần         │
+│ Error_History[4].Code   │   WORD   │  DBW76  │   W#16#0       │ Lịch sử lỗi 4 - Mã lỗi         │
+│ Error_History[4].Time   │   TIME   │  DBD78  │   T#0MS        │ Lịch sử lỗi 4 - Thời gian      │
+│ Error_History[4].Count  │   INT    │  DBW82  │   0            │ Lịch sử lỗi 4 - Số lần         │
+│ Error_History[5].Code   │   WORD   │  DBW84  │   W#16#0       │ Lịch sử lỗi 5 - Mã lỗi         │
+│ Error_History[5].Time   │   TIME   │  DBD86  │   T#0MS        │ Lịch sử lỗi 5 - Thời gian      │
+│ Error_History[5].Count  │   INT    │  DBW90  │   0            │ Lịch sử lỗi 5 - Số lần         │
+│ Error_History[6].Code   │   WORD   │  DBW92  │   W#16#0       │ Lịch sử lỗi 6 - Mã lỗi         │
+│ Error_History[6].Time   │   TIME   │  DBD94  │   T#0MS        │ Lịch sử lỗi 6 - Thời gian      │
+│ Error_History[6].Count  │   INT    │  DBW98  │   0            │ Lịch sử lỗi 6 - Số lần         │
+│ Error_History[7].Code   │   WORD   │  DBW100 │   W#16#0       │ Lịch sử lỗi 7 - Mã lỗi         │
+│ Error_History[7].Time   │   TIME   │  DBD102 │   T#0MS        │ Lịch sử lỗi 7 - Thời gian      │
+│ Error_History[7].Count  │   INT    │  DBW106 │   0            │ Lịch sử lỗi 7 - Số lần         │
+│ Error_History[8].Code   │   WORD   │  DBW108 │   W#16#0       │ Lịch sử lỗi 8 - Mã lỗi         │
+│ Error_History[8].Time   │   TIME   │  DBD110 │   T#0MS        │ Lịch sử lỗi 8 - Thời gian      │
+│ Error_History[8].Count  │   INT    │  DBW114 │   0            │ Lịch sử lỗi 8 - Số lần         │
+│ Error_History[9].Code   │   WORD   │  DBW116 │   W#16#0       │ Lịch sử lỗi 9 - Mã lỗi         │
+│ Error_History[9].Time   │   TIME   │  DBD118 │   T#0MS        │ Lịch sử lỗi 9 - Thời gian      │
+│ Error_History[9].Count  │   INT    │  DBW122 │   0            │ Lịch sử lỗi 9 - Số lần         │
+│ Error_History[10].Code  │   WORD   │  DBW124 │   W#16#0       │ Lịch sử lỗi 10 - Mã lỗi        │
+│ Error_History[10].Time  │   TIME   │  DBD126 │   T#0MS        │ Lịch sử lỗi 10 - Thời gian     │
+│ Error_History[10].Count │   INT    │  DBW130 │   0            │ Lịch sử lỗi 10 - Số lần        │
+│ Memory_Usage            │   INT    │  DBW132 │   45           │ Sử dụng bộ nhớ (%)             │
+│ CPU_Load                │   INT    │  DBW134 │   30           │ Tải CPU (%)                     │
+│ Temperature             │   INT    │  DBW136 │   55           │ Nhiệt độ (°C)                   │
+│ Voltage                 │   INT    │  DBW138 │   240          │ Điện áp (V*10)                  │
+│ Operating_Hours         │   TIME   │  DBD140 │   T#0MS        │ Giờ hoạt động                   │
+│ Maintenance_Due         │   BOOL   │  DBX144.0│   FALSE        │ Cần bảo trì                    │
+│ Calibration_Due         │   BOOL   │  DBX144.1│   FALSE        │ Cần hiệu chuẩn                 │
+│ Backup_Required         │   BOOL   │  DBX144.2│   FALSE        │ Cần backup                     │
+│ Reserved[1]             │   WORD   │  DBW146 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[2]             │   WORD   │  DBW148 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[3]             │   WORD   │  DBW150 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[4]             │   WORD   │  DBW152 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[5]             │   WORD   │  DBW154 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[6]             │   WORD   │  DBW156 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[7]             │   WORD   │  DBW158 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[8]             │   WORD   │  DBW160 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[9]             │   WORD   │  DBW162 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[10]            │   WORD   │  DBW164 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[11]            │   WORD   │  DBW166 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[12]            │   WORD   │  DBW168 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[13]            │   WORD   │  DBW170 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[14]            │   WORD   │  DBW172 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[15]            │   WORD   │  DBW174 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[16]            │   WORD   │  DBW176 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[17]            │   WORD   │  DBW178 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[18]            │   WORD   │  DBW180 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[19]            │   WORD   │  DBW182 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[20]            │   WORD   │  DBW184 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[21]            │   WORD   │  DBW186 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[22]            │   WORD   │  DBW188 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[23]            │   WORD   │  DBW190 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[24]            │   WORD   │  DBW192 │   W#16#0       │ Dự trữ mở rộng                  │
+│ Reserved[25]            │   WORD   │  DBW194 │   W#16#0       │ Dự trữ mở rộng                  │
+└─────────────────────────┴──────────┴─────────┴────────────────┴─────────────────────────────────┘
+```
+
+TỔNG KÍCH THƯỚC DB102: 196 bytes
+
+CẤU HÌNH:
+```
+DATA_BLOCK DB 102 VERSION : 0.1
+
+STRUCT
+    // System Status
+    System_Mode : INT;             // DBW0: Chế độ hệ thống
+    PLC_Status : WORD;             // DBW2: Trạng thái PLC
+    Communication_Status : WORD;   // DBW4: Trạng thái giao tiếp
+    Overall_Health : INT;          // DBW6: Tình trạng tổng thể
+    
+    // Performance Monitoring
+    Cycle_Time_Current : TIME;     // DBD8: Thời gian chu kỳ hiện tại
+    Cycle_Time_Max : TIME;         // DBD12: Thời gian chu kỳ tối đa
+    Cycle_Time_Min : TIME;         // DBD16: Thời gian chu kỳ tối thiểu
+    Cycle_Time_Average : TIME;     // DBD20: Thời gian chu kỳ trung bình
+    
+    // Communication Statistics
+    Messages_Sent : DINT;          // DBD24: Số message đã gửi
+    Messages_Received : DINT;      // DBD28: Số message đã nhận
+    Communication_Errors : INT;    // DBW32: Số lỗi giao tiếp
+    Timeout_Count : INT;           // DBW34: Số lần timeout
+    
+    // Robot Statistics
+    Robot_Movements : DINT;        // DBD36: Số lần di chuyển robot
+    Robot_Errors : INT;            // DBW40: Số lỗi robot
+    Average_Movement_Time : TIME;  // DBD42: Thời gian di chuyển TB
+    
+    // Error Logging
+    Last_Error_Code : WORD;        // DBW46: Mã lỗi cuối
+    Last_Error_Time : TIME;        // DBD48: Thời gian lỗi cuối
+    Error_History : ARRAY[1..10] OF STRUCT
+        Error_Code : WORD;
+        Error_Time : TIME;
+        Error_Count : INT;
+    END_STRUCT;                    // DBD52-132: Lịch sử lỗi
+    
+    // System Diagnostics
+    Memory_Usage : INT;            // DBW134: Sử dụng bộ nhớ (%)
+    CPU_Load : INT;                // DBW136: Tải CPU (%)
+    Temperature : INT;             // DBW138: Nhiệt độ (°C)
+    Voltage : INT;                 // DBW140: Điện áp (V*10)
+    
+    // Maintenance Information
+    Operating_Hours : TIME;        // DBD142: Giờ hoạt động
+    Maintenance_Due : BOOL;        // DBX146.0: Cần bảo trì
+    Calibration_Due : BOOL;        // DBX146.1: Cần hiệu chuẩn
+    Backup_Required : BOOL;        // DBX146.2: Cần backup
+    
+    // Reserved for expansion
+    Reserved : ARRAY[1..25] OF WORD; // DBW148-196: Dự trữ
+END_STRUCT
+
+BEGIN
+    System_Mode := 1;              // Auto mode
+    PLC_Status := W#16#1;          // OK
+    Communication_Status := W#16#1; // OK
+    Overall_Health := 100;         // 100%
+    Cycle_Time_Current := T#50MS;
+    Cycle_Time_Max := T#100MS;
+    Cycle_Time_Min := T#30MS;
+    Cycle_Time_Average := T#50MS;
+    Messages_Sent := L#0;
+    Messages_Received := L#0;
+    Communication_Errors := 0;
+    Timeout_Count := 0;
+    Robot_Movements := L#0;
+    Robot_Errors := 0;
+    Average_Movement_Time := T#2S;
+    Last_Error_Code := W#16#0;
+    Last_Error_Time := T#0MS;
+    // Initialize error history array
+    Error_History[1].Error_Code := W#16#0;
+    Error_History[1].Error_Time := T#0MS;
+    Error_History[1].Error_Count := 0;
+    Error_History[2].Error_Code := W#16#0;
+    Error_History[2].Error_Time := T#0MS;
+    Error_History[2].Error_Count := 0;
+    Error_History[3].Error_Code := W#16#0;
+    Error_History[3].Error_Time := T#0MS;
+    Error_History[3].Error_Count := 0;
+    Error_History[4].Error_Code := W#16#0;
+    Error_History[4].Error_Time := T#0MS;
+    Error_History[4].Error_Count := 0;
+    Error_History[5].Error_Code := W#16#0;
+    Error_History[5].Error_Time := T#0MS;
+    Error_History[5].Error_Count := 0;
+    Error_History[6].Error_Code := W#16#0;
+    Error_History[6].Error_Time := T#0MS;
+    Error_History[6].Error_Count := 0;
+    Error_History[7].Error_Code := W#16#0;
+    Error_History[7].Error_Time := T#0MS;
+    Error_History[7].Error_Count := 0;
+    Error_History[8].Error_Code := W#16#0;
+    Error_History[8].Error_Time := T#0MS;
+    Error_History[8].Error_Count := 0;
+    Error_History[9].Error_Code := W#16#0;
+    Error_History[9].Error_Time := T#0MS;
+    Error_History[9].Error_Count := 0;
+    Error_History[10].Error_Code := W#16#0;
+    Error_History[10].Error_Time := T#0MS;
+    Error_History[10].Error_Count := 0;
+    Memory_Usage := 45;            // 45%
+    CPU_Load := 30;                // 30%
+    Temperature := 55;             // 55°C
+    Voltage := 240;                // 24.0V
+    Operating_Hours := T#0MS;
+    Maintenance_Due := FALSE;
+    Calibration_Due := FALSE;
+    Backup_Required := FALSE;
+    Reserved[1] := W#16#0;
+    Reserved[2] := W#16#0;
+    Reserved[3] := W#16#0;
+    Reserved[4] := W#16#0;
+    Reserved[5] := W#16#0;
+    Reserved[6] := W#16#0;
+    Reserved[7] := W#16#0;
+    Reserved[8] := W#16#0;
+    Reserved[9] := W#16#0;
+    Reserved[10] := W#16#0;
+    Reserved[11] := W#16#0;
+    Reserved[12] := W#16#0;
+    Reserved[13] := W#16#0;
+    Reserved[14] := W#16#0;
+    Reserved[15] := W#16#0;
+    Reserved[16] := W#16#0;
+    Reserved[17] := W#16#0;
+    Reserved[18] := W#16#0;
+    Reserved[19] := W#16#0;
+    Reserved[20] := W#16#0;
+    Reserved[21] := W#16#0;
+    Reserved[22] := W#16#0;
+    Reserved[23] := W#16#0;
+    Reserved[24] := W#16#0;
+    Reserved[25] := W#16#0;
+END_DATA_BLOCK
+```
+
+==========================================
+V. THIẾT LẬP PROPERTIES VÀ ATTRIBUTES
+==========================================
+
+A. GENERAL PROPERTIES:
+─────────────────────
+
+1. OBJECT PROPERTIES:
+```
+Name: DB100_CoordinateExchange
+Type: Data Block
+Number: 100
+Language: DB
+Version: 0.1
+```
+
+2. PROTECTION SETTINGS:
+```
+Read Protection: None
+Write Protection: None
+Know-how Protection: None
+```
+
+3. DOWNLOAD PROPERTIES:
+```
+Download to PG: Yes
+Download to Device: Yes
+```
+
+B. ADVANCED PROPERTIES:
+──────────────────────
+
+1. MEMORY ATTRIBUTES:
+```
+Memory Type: Load Memory
+Retentive: Yes (cho dữ liệu quan trọng)
+Initial Value: From Source
+```
+
+2. ACCESS CONTROL:
+```
+Optimized Block Access: Yes
+Standard Access: Yes
+```
+
+3. ATTRIBUTES:
+```
+Author: System Engineer
+Family: Coordinate Exchange
+Version: 1.0
+User-defined ID: 100
+```
+
+==========================================
+VI. BEST PRACTICES VÀ OPTIMIZATION
+==========================================
+
+A. NAMING CONVENTIONS:
+─────────────────────
+
+1. DATA BLOCK NAMING:
+```
+DB100_CoordinateExchange     // Tốt
+DB101_RobotBuffer           // Tốt
+DB102_SystemDiagnostics     // Tốt
+
+DB100                       // Tránh - không mô tả
+Data_Block_100              // Tránh - quá dài
+```
+
+2. VARIABLE NAMING:
+```
+Command_Word                // Tốt - mô tả rõ ràng
+Status_Word                 // Tốt - nhất quán
+X_Coordinate               // Tốt - chuẩn hóa
+
+cmd                        // Tránh - viết tắt
+Position_X_Coordinate_Value // Tránh - quá dài
+```
+
+B. MEMORY OPTIMIZATION:
+──────────────────────
+
+1. SẮP XẾP BIẾN THEO KÍCH THƯỚC:
+```
+STRUCT
+    // 32-bit variables first
+    X_Coordinate : DINT;
+    Y_Coordinate : DINT;
+    Z_Coordinate : DINT;
+    
+    // 16-bit variables next
+    Command_Word : WORD;
+    Status_Word : WORD;
+    Speed_Override : INT;
+    
+    // 8-bit variables last
+    Gripper_Status : BYTE;
+    Error_Flag : BOOL;
+END_STRUCT
+```
+
+2. ALIGNMENT OPTIMIZATION:
+```
+// Tốt - aligned structures
+STRUCT
+    Control_Word : WORD;        // 16-bit aligned
+    Status_Bits : WORD;         // 16-bit aligned
+    Position_X : DINT;          // 32-bit aligned
+    Position_Y : DINT;          // 32-bit aligned
+END_STRUCT
+
+// Tránh - misaligned
+STRUCT
+    Flag : BOOL;                // 1-bit
+    Position_X : DINT;          // 32-bit - misaligned
+    Control_Word : WORD;        // 16-bit - misaligned
+END_STRUCT
+```
+
+C. PERFORMANCE OPTIMIZATION:
+───────────────────────────
+
+1. GIẢM THIỂU TRUY CẬP NETWORK:
+```
+// Tốt - batch read/write
+L     DB100.DBW0           // Read command
+L     DB100.DBW2           // Read status
+L     DB100.DBD10          // Read X coordinate
+L     DB100.DBD14          // Read Y coordinate
+
+// Tránh - multiple individual accesses
+L     DB100.DBW0
+// ... process ...
+L     DB100.DBW2
+// ... process ...
+```
+
+2. SỬ DỤNG INDIRECT ADDRESSING:
+```
+// Efficient array access
+L     P##DB100.Positions   // Base address
+L     #Index               // Array index
+SLD   3                    // Multiply by 8 (size of struct)
++D                         // Calculate offset
+LAR1                       // Load to address register
+L     W [AR1,P#0.0]        // Access array element
+```
+
+==========================================
+VII. DEBUGGING VÀ MONITORING
+==========================================
+
+A. WATCH TABLES:
+───────────────
+
+1. TẠO WATCH TABLE:
+```
+Variable Name               Address     Data Type    Current Value
+Command_Word               DB100.DBW0   WORD        W#16#0001
+Status_Word                DB100.DBW2   WORD        W#16#0008
+X_Coordinate              DB100.DBD10   DINT        L#1250
+Y_Coordinate              DB100.DBD14   DINT        L#850
+Z_Coordinate              DB100.DBD18   DINT        L#500
+Error_Code                DB100.DBW36   WORD        W#16#0000
+```
+
+2. MONITOR COMMUNICATION:
+```
+// PLC to Robot Interface
+Robot_Command             DB101.DBW0    WORD        W#16#0001
+Robot_Status              DB101.DBW2    WORD        W#16#0008
+Command_Active            DB101.DBX4.0  BOOL        TRUE
+Movement_Complete         DB101.DBX4.2  BOOL        FALSE
+```
+
+B. ONLINE DIAGNOSTICS:
+─────────────────────
+
+1. REAL-TIME MONITORING:
+```
+// System performance
+Cycle_Time_Current        DB102.DBD8    TIME        T#45MS
+Messages_Sent             DB102.DBD24   DINT        L#1250
+Communication_Errors      DB102.DBW32   INT         0
+CPU_Load                  DB102.DBW136  INT         25
+```
+
+2. ERROR TRACKING:
+```
+// Error monitoring
+Last_Error_Code           DB102.DBW46   WORD        W#16#0000
+Last_Error_Time           DB102.DBD48   TIME        T#0MS
+Error_History[1].Error_Code DB102.DBW52 WORD        W#16#0000
+```
+
+==========================================
+VIII. BACKUP VÀ RESTORE PROCEDURES
+==========================================
+
+A. BACKUP DATA BLOCKS:
+─────────────────────
+
+1. MANUAL BACKUP:
+```
+Bước 1: Mở SIMATIC Manager
+Bước 2: Select tất cả Data Blocks
+Bước 3: Right-click → Export
+Bước 4: Chọn format (.awl hoặc .db)
+Bước 5: Lưu vào thư mục backup
+```
+
+2. AUTOMATIC BACKUP:
+```
+// Tạo script backup tự động
+@echo off
+set timestamp=%date:~6,4%_%date:~3,2%_%date:~0,2%_%time:~0,2%_%time:~3,2%
+mkdir "C:\Backup\DB_Backup_%timestamp%"
+copy "C:\S7Project\*.db" "C:\Backup\DB_Backup_%timestamp%\"
+```
+
+B. RESTORE PROCEDURES:
+─────────────────────
+
+1. RESTORE FROM BACKUP:
+```
+Bước 1: Mở SIMATIC Manager
+Bước 2: Delete existing Data Block
+Bước 3: Right-click → Import
+Bước 4: Chọn backup file
+Bước 5: Compile và download
+```
+
+2. VERIFY RESTORE:
+```
+// Kiểm tra data integrity
+- Compare initial values
+- Verify structure definitions
+- Test communication
+- Monitor system behavior
+```
+
+==========================================
+IX. TROUBLESHOOTING COMMON ISSUES
+==========================================
+
+A. COMPILATION ERRORS:
+─────────────────────
+
+1. SYNTAX ERRORS:
+```
+Error: "END_STRUCT expected"
+Solution: Kiểm tra matching BEGIN/END statements
+
+Error: "Invalid data type"
+Solution: Verify data type declarations
+
+Error: "Duplicate variable name"
+Solution: Rename conflicting variables
+```
+
+2. MEMORY ERRORS:
+```
+Error: "Insufficient memory"
+Solution: Optimize data structures, reduce size
+
+Error: "Address conflict"
+Solution: Check absolute addressing conflicts
+```
+
+B. RUNTIME ERRORS:
+─────────────────
+
+1. COMMUNICATION ERRORS:
+```
+Problem: Data không đồng bộ
+Solution: Implement handshake protocol
+
+Problem: Timeout errors
+Solution: Increase timeout values, check network
+```
+
+2. DATA INTEGRITY ISSUES:
+```
+Problem: Corrupted data
+Solution: Add checksums, validate ranges
+
+Problem: Lost data
+Solution: Implement retentive storage
+```
+
+==========================================
+X. MAINTENANCE VÀ UPDATES
+==========================================
+
+A. REGULAR MAINTENANCE:
+──────────────────────
+
+1. WEEKLY CHECKS:
+```
+- Monitor memory usage
+- Check error logs
+- Verify communication statistics
+- Backup current configuration
+```
+
+2. MONTHLY MAINTENANCE:
+```
+- Review performance metrics
+- Update documentation
+- Optimize data structures
+- Clean up unused variables
+```
+
+B. VERSION CONTROL:
+──────────────────
+
+1. VERSIONING STRATEGY:
+```
+v1.0 - Initial release
+v1.1 - Bug fixes
+v1.2 - Performance improvements
+v2.0 - Major structural changes
+```
+
+2. CHANGE DOCUMENTATION:
+```
+// Document all changes
+Date: 17/07/2025
+Version: 1.1
+Changes: Added error handling in DB102
+Author: System Engineer
+Tested: Yes
+Approved: Yes
+```
+
+==========================================
+XI. INTEGRATION WITH EXISTING SYSTEM
+==========================================
+
+A. KHÔNG THAY ĐỔI CHƯƠNG TRÌNH HIỆN TẠI:
+────────────────────────────────────────
+
+1. THÊM DATA BLOCKS MỚI:
+```
+// Existing DBs remain unchanged
+DB1  - System Configuration (existing)
+DB2  - Global Parameters (existing)
+DB5  - Area 1 Configuration (existing)
+...
+
+// New DBs for coordinate exchange
+DB100 - Laptop Interface (new)
+DB101 - Robot Buffer (new)
+DB102 - System Diagnostics (new)
+```
+
+2. INTEGRATION FUNCTIONS:
+```
+// Tạo functions mới để xử lý coordinate exchange
+FC200 - Laptop Communication Handler
+FC201 - Coordinate Validation
+FC202 - Robot Command Interface
+FC203 - Error Handler
+FC204 - Data Logger
+FC205 - System Monitor
+```
+
+B. CALL INTEGRATION FUNCTIONS:
+─────────────────────────────
+
+1. TRONG OB1 (MAIN PROGRAM):
+```
+// Existing code remains unchanged
+CALL FC50    // Area 1 control (existing)
+CALL FC60    // Area 2 control (existing)
+
+// Add new coordinate exchange functions
+CALL FC200   // Laptop communication (new)
+CALL FC202   // Robot interface (new)
+CALL FC205   // System monitor (new)
+```
+
+2. TRONG OB35 (CYCLIC INTERRUPT):
+```
+// Existing interrupt handling
+...existing code...
+
+// Add coordinate exchange monitoring
+CALL FC203   // Error handler (new)
+CALL FC204   // Data logger (new)
+```
+
+==========================================
+XII. TESTING VÀ VALIDATION
+==========================================
+
+A. UNIT TESTING:
+───────────────
+
+1. DATA BLOCK STRUCTURE TEST:
+```
+Test Case 1: Variable Access
+- Write test values to all variables
+- Read back and verify
+- Check data type consistency
+
+Test Case 2: Memory Alignment
+- Verify proper alignment
+- Check for padding issues
+- Test performance impact
+```
+
+2. COMMUNICATION TEST:
+```
+Test Case 3: Laptop Interface
+- Send commands via S7 protocol
+- Verify data reception
+- Check handshake operation
+
+Test Case 4: Robot Interface
+- Send coordinates to robot
+- Verify robot response
+- Check error handling
+```
+
+B. INTEGRATION TESTING:
+──────────────────────
+
+1. END-TO-END TESTING:
+```
+Scenario 1: Complete Coordinate Exchange
+Laptop → PLC → Robot → PLC → Laptop
+
+Scenario 2: Error Recovery
+Inject errors and verify recovery
+
+Scenario 3: Performance Testing
+Monitor timing and throughput
+```
+
+2. STRESS TESTING:
+```
+- High frequency coordinate updates
+- Multiple concurrent connections
+- Error condition simulation
+- Memory usage monitoring
+```
+
+==========================================
+XIII. PERFORMANCE BENCHMARKS
+==========================================
+
+A. TIMING REQUIREMENTS:
+──────────────────────
+
+1. COMMUNICATION TIMING:
+```
+Laptop → PLC: <50ms
+PLC → Robot: <100ms
+Robot → PLC: <100ms
+PLC → Laptop: <50ms
+Total Round Trip: <300ms
+```
+
+2. MEMORY USAGE:
+```
+DB100: 62 bytes   - Laptop Communication Interface
+DB101: 102 bytes  - Robot Communication Buffer  
+DB102: 196 bytes  - System Status & Diagnostics
+Total Additional Memory: 360 bytes
+```
+
+B. PERFORMANCE METRICS:
+──────────────────────
+
+1. THROUGHPUT:
+```
+Commands per second: 10-20
+Data updates per second: 50-100
+Error rate: <0.1%
+Availability: >99.9%
+```
+
+==========================================
+XIV. SAFETY CONSIDERATIONS
+==========================================
+
+A. DATA PROTECTION:
+──────────────────
+
+1. CRITICAL DATA BACKUP:
+```
+- Automatic backup every hour
+- Retain 7 days of backups
+- Offsite backup daily
+- Verify backup integrity
+```
+
+2. ACCESS CONTROL:
+```
+- Read-only access for monitoring
+- Write access only for authorized users
+- Audit trail for all changes
+- Password protection for critical functions
+```
+
+B. SYSTEM SAFETY:
+────────────────
+
+1. FAIL-SAFE DESIGN:
+```
+- Default to safe states
+- Timeout protection
+- Redundant error checking
+- Emergency stop integration
+```
+
+2. ERROR HANDLING:
+```
+- Comprehensive error codes
+- Automatic error recovery
+- Operator notification
+- System shutdown procedures
+```
+
+==========================================
+XV. CONCLUSION
+==========================================
+
+Tài liệu này cung cấp hướng dẫn chi tiết về cấu hình Data Block cho hệ thống 
+PLC S7-400H palletizing. Các Data Block được thiết kế để:
+
+✓ Tích hợp seamlessly với hệ thống hiện tại
+✓ Hỗ trợ trao đổi tọa độ Laptop ↔ PLC ↔ Robot
+✓ Cung cấp monitoring và diagnostics toàn diện
+✓ Đảm bảo tính bảo mật và an toàn
+✓ Optimize performance và memory usage
+
+Việc triển khai theo hướng dẫn này sẽ tạo ra một hệ thống mạnh mẽ, đáng tin cậy
+và dễ bảo trì cho ứng dụng palletizing automation.
+
+==========================================
+DOCUMENT VERSION: 1.0
+CREATED: 17/07/2025
+AUTHOR: System Engineer
+REVIEWED: Technical Team
+APPROVED: Project Manager
+==========================================

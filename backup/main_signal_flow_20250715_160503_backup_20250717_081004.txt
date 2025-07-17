@@ -1,0 +1,642 @@
+# KIEN TRUC VA SO DO LUONG CHI TIET - HE THONG PALLETIZING S7-400 + ROBOT ABB IRC5
+
+===============================================================================
+                          TONG QUAN KIEN TRUC HE THONG
+===============================================================================
+
++-----------------------------------------------------------------------------+
+|                            HE THONG PALLETIZING TU DONG                    |
+|                                                                             |
+|  +--- PLC S7-400 REDUNDANT ----+    +--- ROBOT ABB IRC5 ---+    +--- I/O ---+ |
+|  |                             |    |                      |    |            | |
+|  |  CPU 1 (Primary)            |    |  Robot Controller    |    | Sensors    | |
+|  |  +- OB1 (Main Program)      |<-->|  +- Motion Control   |<-->| Actuators  | |
+|  |  +- OB35 (Cyclic Interrupt) |    |  +- Path Planning    |    | Safety     | |
+|  |  +- FB450-453 (Red I/O)     |    |  +- I/O Processing   |    | Vision     | |
+|  |  +- FC112-113 (Robot Comm)  |    |  +- Safety System    |    | Conveyor   | |
+|  |  +- DB1-460 (Data Storage)  |    |                      |    |            | |
+|  |                             |    +----------------------+    +------------+ |
+|  |  CPU 2 (Secondary)          |                                             |
+|  |  +- Hot Standby Mode        |    +--- MES/ERP SYSTEM ----+                |
+|  |  +- Mirror of CPU 1         |    |                       |                |
+|  |  +- Automatic Failover      |<-->|  Production Planning  |                |
+|  |  +- Sync Data Exchange      |    |  Quality Management   |                |
+|  |                             |    |  Recipe Management    |                |
+|  +-----------------------------+    |  Performance Monitor  |                |
+|                                     +-----------------------+                |
++-----------------------------------------------------------------------------+
+
+===============================================================================
+                             SO DO LUONG TONG THE
+===============================================================================
+
+START SYSTEM
+     |
+     v
++-------------+     +-------------+     +-------------+     +-------------+
+|   POWER UP  |---->| SYSTEM INIT |---->| REDUNDANCY  |---->|   SAFETY    |
+|             |     |             |     |   CHECK     |     |   CHECK     |
++-------------+     +-------------+     +-------------+     +-------------+
+                            |                   |                   |
+                            v                   v                   v
+                    +-------------+     +-------------+     +-------------+
+                    |  PROFIBUS   |     | DUAL CPU    |     | EMERGENCY   |
+                    | INITIALIZE  |     | SYNC CHECK  |     | STOP CHECK  |
+                    +-------------+     +-------------+     +-------------+
+                            |                   |                   |
+                            +-------------------+-------------------+
+                                                v
+                                        +-------------+
+                                        |   READY     |
+                                        |   STATE     |
+                                        +-------------+
+                                                |
+                    +---------------------------+---------------------------+
+                    v                           v                           v
+            +-------------+             +-------------+             +-------------+
+            |   MANUAL    |             |    AUTO     |             |  MAINTAIN   |
+            |    MODE     |             |    MODE     |             |    MODE     |
+            +-------------+             +-------------+             +-------------+
+                    |                           |                           |
+                    |                           v                           |
+                    |                  +-------------+                      |
+                    |                  | PALLETIZING |                      |
+                    |                  |  OPERATION  |                      |
+                    |                  +-------------+                      |
+                    |                           |                           |
+                    +---------------------------+---------------------------+
+                                                v
+                                        +-------------+
+                                        |    STOP/    |
+                                        |   SHUTDOWN  |
+                                        +-------------+
+
+===============================================================================
+                          LUONG DIEU KHIEN CHI TIET OB1
+===============================================================================
+
+OB1 MAIN PROGRAM CYCLE (10ms)
+|
++- NETWORK 1: DATA BLOCK INITIALIZATION
+|  +- OPN DB 5    // Control data zone 1
+|  +- OPN DB 6    // Control data zone 2  
+|  +- OPN DB 7    // Control data zone 3
+|  +- OPN DB 10   // Main status data
+|
++- NETWORK 2: MODE CONTROL LOGIC
+|  +- A I0.0      // Auto mode button
+|  +- A I0.1      // Manual mode button
+|  +- A I0.4      // Reset button
+|  +- = M12.0     // Auto mode active
+|  +- = M12.1     // Manual mode active
+|  +- BLD 102     // Build logic operation
+|
++- NETWORK 3: ZONE 1 CONTROL
+|  +- A M15.0     // Zone 1 enable
+|  +- A M16.0     // Zone 1 auto mode
+|  +- A M19.0     // Master safety enable
+|  +- = M30.1-5   // Zone 1 outputs
+|  +- Status codes: 11,12,14,20,30,31,37,161
+|
++- NETWORK 4: ZONE 2 CONTROL (Similar to Zone 1)
+|  +- A M515.0    // Zone 2 enable
+|  +- A M516.0    // Zone 2 auto mode  
+|  +- A M519.0    // Zone 2 safety enable
+|  +- Control DB60.DBW 100
+|
++- NETWORK 5: FUNCTION CALLS
+|  +- CALL FC 50  // Main control logic
+|  +- CALL FC 51  // Control extension 1
+|  +- CALL FC 52  // Control extension 2
+|  +- CALL FC 53  // Control extension 3
+|  +- CALL FC 54  // Control extension 4
+|  +- CALL FC 55  // Control extension 5
+|  +- CALL FC 102 // System utilities
+|  +- CALL FC 103 // Additional utilities
+|
++- NETWORK 6: EXTENDED DATA BLOCKS
+   +- OPN DB 55   // Extended control zone 1
+   +- OPN DB 56   // Extended control zone 2
+   +- OPN DB 57   // Extended control zone 3
+   +- OPN DB 60   // Extended status data
+
+===============================================================================
+                     SƠ ĐỒ TỔNG THỂ LUỒNG HOẠT ĐỘNG CÁC KHỐI OB
+===============================================================================
+
+                               HỆ THỐNG CPU S7-400
+                    +---------------------------------------------+
+                    |            OPERATING SYSTEM                 |
+                    |                                             |
+    +--------------+|  +-----------------------------------------+|
+    |   STARTUP    ||  |              CYCLIC EXECUTION           ||
+    |  SEQUENCE    ||  |                                         ||
+    |              ||  |    +-----------+     +---------------+  ||
+    |  OB100 ------++--+---> |   OB1     |----> |   OB35        |  ||
+    |  (Warm Start)||  |    | Main Prog |     | Cyclic Int    |  ||
+    |              ||  |    | 10ms      |     | 50ms          |  ||
+    |  OB101 ------++--+---> |           |     |               |  ||
+    |  (Hot Start) ||  |    +-----------+     +---------------+  ||
+    |              ||  |           |                   |         ||
+    |  OB102 ------++--+----------+|                   |         ||
+    |  (Cold Start)||  |          ||                   |         ||
+    +--------------+|  |          v|                   v         ||
+                    |  |    +----------+         +--------------+||
+                    |  |    | FC CALLS |         | FB CALLS     |||
+                    |  |    | FC50-113 |         | FB450-457    |||
+                    |  |    +----------+         +--------------+||
+                    |  +-----------------------------------------+|
+                    +---------------------------------------------+
+                                     |
+              +----------------------+----------------------+
+              |                      |                      |
+              v                      v                      v
+    +-----------------+    +-----------------+    +-----------------+
+    |   HARDWARE      |    |    ERROR &      |    |   TIME BASE     |
+    |  INTERRUPTS     |    |  DIAGNOSTIC     |    |  INTERRUPTS     |
+    |                 |    |   HANDLING      |    |                 |
+    |  OB40-OB47 ----+----+---> OB70-OB88   |    |  OB10-OB17 ----+
+    |  (Process Int)  |    |  (System Int)   |    |  (Time Int)     |
+    |                 |    |                 |    |                 |
+    |  OB55-OB57 ----+----+---> OB121-OB122 |    |  OB20-OB23 ----+
+    |  (Status Int)   |    |  (Programming   |    |  (Delay Int)    |
+    |                 |    |   Errors)       |    |                 |
+    +-----------------+    +-----------------+    +-----------------+
+
+===============================================================================
+                        CHI TIẾT LUỒNG THỰC HIỆN CÁC OB
+===============================================================================
+
+STARTUP SEQUENCE (Khởi động hệ thống):
++-----------------------------------------------------------------------------+
+|  POWER ON -> HARDWARE INIT -> MEMORY CHECK -> LOAD PROGRAM                 |
+|      |            |             |              |                           |
+|      v            v             v              v                           |
+|  OB100       OB101/OB102    System Check   OB1 Ready                      |
+| (Warm)      (Hot/Cold)                                                     |
++-----------------------------------------------------------------------------+
+
+MAIN EXECUTION CYCLE (Chu kỳ thực hiện chính):
++-----------------------------------------------------------------------------+
+|                              OB1 CYCLE (10ms)                              |
+|  +-----------+  +-----------+  +-----------+  +-----------+  +-----------+|
+|  | INPUT     |-> | USER      |-> | OUTPUT    |-> | COMM      |-> | SYSTEM    ||
+|  | PROCESS   |  | PROGRAM   |  | UPDATE    |  | PROCESS   |  | OVERHEAD  ||
+|  |           |  | FC50-113  |  |           |  |           |  |           ||
+|  +-----------+  +-----------+  +-----------+  +-----------+  +-----------+|
+|       ^                                                           |        |
+|       +-----------------------------------------------------------+        |
++-----------------------------------------------------------------------------+
+
+INTERRUPT PROCESSING (Xử lý ngắt):
++-----------------------------------------------------------------------------+
+|                           INTERRUPT PRIORITY                               |
+|  +---------------------------------------------------------------------+   |
+|  | Priority 28: OB10-17 (Time Interrupts)                            |   |
+|  | Priority 27: OB20-23 (Delay Interrupts)                           |   |
+|  | Priority 26: OB30-38 (Cyclic Interrupts) <- OB35                  |   |
+|  | Priority 25: OB40-47 (Hardware Interrupts)                        |   |
+|  | Priority 24: OB55-57 (Status Interrupts)                          |   |
+|  | Priority 22: OB70-88 (Error/Diagnostic Interrupts)                |   |
+|  | Priority 21: OB121-122 (Programming Error Interrupts)             |   |
+|  | Priority 1:  OB1 (Main Program)                                   |   |
+|  +---------------------------------------------------------------------+   |
++-----------------------------------------------------------------------------+
+
+REDUNDANCY OPERATION (Hoạt động dự phòng):
++-----------------------------------------------------------------------------+
+|                           DUAL CPU OPERATION                               |
+|  +-----------------------+           +-----------------------+             |
+|  |      CPU 1 (PRIMARY)  |           |    CPU 2 (STANDBY)    |             |
+|  |                       |           |                       |             |
+|  |  +-----------------+  |  SYNC     |  +-----------------+  |             |
+|  |  | OB1 -> FC50-113 |  |<--------->|  | OB1 -> FC50-113 |  |             |
+|  |  | OB35-> FB450-453|  |  DATA     |  | OB35-> FB450-453|  |             |
+|  |  | OB70-88 Errors  |  | EXCHANGE  |  | OB70-88 Errors  |  |             |
+|  |  +-----------------+  |           |  +-----------------+  |             |
+|  |                       |           |                       |             |
+|  |  Active I/O Control   |           |   Mirror Operation    |             |
+|  +-----------------------+           +-----------------------+             |
+|              |                                   |                         |
+|              +----------- FAILOVER --------------+                         |
+|                        (< 100ms switching)                                 |
++-----------------------------------------------------------------------------+
+
+ERROR HANDLING HIERARCHY (Phân cấp xử lý lỗi):
++-----------------------------------------------------------------------------+
+|                            ERROR CLASSIFICATION                             |
+|                                                                             |
+|  LEVEL 1: SYSTEM ERRORS (Lỗi hệ thống)                                     |
+|  +---------------------------------------------------------------------+   |
+|  | OB80 -> Time Errors (Lỗi thời gian)                                |   |
+|  | OB81 -> Power Supply Errors (Lỗi nguồn điện)                       |   |
+|  | OB82 -> Module Errors (Lỗi module)                                 |   |
+|  | OB83 -> Module Removed (Module bị gỡ)                              |   |
+|  | OB85 -> Program Errors (Lỗi chương trình)                          |   |
+|  | OB86 -> Module Fault (Sự cố module)                                |   |
+|  | OB87 -> Communication Errors (Lỗi truyền thông)                    |   |
+|  | OB88 -> Processing Errors (Lỗi xử lý)                              |   |
+|  +---------------------------------------------------------------------+   |
+|                                     |                                       |
+|  LEVEL 2: I/O ERRORS (Lỗi I/O)     v                                       |
+|  +---------------------------------------------------------------------+   |
+|  | OB70 -> Redundancy Error (Lỗi dự phòng)                            |   |
+|  | OB72 -> Redundancy Loss (Mất dự phòng)                             |   |
+|  | -> CALL FB452 (Detailed diagnostics)                               |   |
+|  | -> CALL FC450 (Recovery procedures)                                |   |
+|  +---------------------------------------------------------------------+   |
+|                                     |                                       |
+|  LEVEL 3: PROGRAM ERRORS (Lỗi CT)  v                                       |
+|  +---------------------------------------------------------------------+   |
+|  | OB121 -> Programming Error (Lỗi lập trình)                         |   |
+|  | OB122 -> Access Error (Lỗi truy cập)                               |   |
+|  | -> Error logging và safe state activation                          |   |
+|  +---------------------------------------------------------------------+   |
++-----------------------------------------------------------------------------+
+
+COMMUNICATION FLOW WITHIN OBs (Luồng truyền thông trong OBs):
++-----------------------------------------------------------------------------+
+|                         INTERNAL COMMUNICATION                             |
+|                                                                             |
+|  OB1 (Main) -------------- Data Exchange -------------- OB35 (Cyclic)     |
+|     |                           |                              |            |
+|     +- DB5,6,7,10 (Control)     |                              +- FB450-453|
+|     +- FC50-113 (Functions)     |                              +- FB523    |
+|     +- Status Management        |                              +- I/O Proc |
+|                                 |                                           |
+|  OB70-88 (Errors) --------------+-------- Diagnostic Data ----------------+|
+|     |                           |                                          ||
+|     +- FB452 (Error Analysis)   |                                          ||
+|     +- FC450-451 (Recovery)     |                                          ||
+|     +- Event Logging            |                                          ||
+|                                 |                                          ||
+|  OB40-47 (HW Int) --------------+-------- Process Signals ----------------+|
+|     |                           |                                           |
+|     +- Robot Interface          |                                           |
+|     +- Safety Systems           |                                           |
+|     +- Emergency Handling       |                                           |
+|                                 |                                           |
+|  OB100-102 (Startup) -----------+-------- Initialization -----------------+
+|     |
+|     +- System Parameters
+|     +- Communication Setup
+|     +- Safety Validation
+|
++-----------------------------------------------------------------------------+
+
+═══════════════════════════════════════════════════════════════════════════════════
+                         LUỒNG NGẮT CHU KỲ OB35 (50ms)
+═══════════════════════════════════════════════════════════════════════════════════
+
+OB35 CYCLIC INTERRUPT
+│
+├─ NETWORK 1: REDUNDANT I/O PROCESSING
+│  └─ CALL FB 450, DB 450
+│     ├─ OUT0 := #TEMP10  // Primary input data
+│     └─ OUT1 := #TEMP11  // Secondary input data
+│
+├─ NETWORK 2: SYSTEM DIAGNOSTIC
+│  └─ CALL FB 523, DB 423
+│     ├─ IN1 := DW#16#1   // Diagnostic enable
+│     ├─ OUT2 := M216.0   // Status output 1
+│     ├─ OUT3 := M217.0   // Status output 2
+│     ├─ OUT4 := M216.2   // Warning output
+│     └─ OUT5 := M216.3   // Error output
+│
+├─ NETWORK 3: TIME MANAGEMENT
+│  ├─ CALL "READ_CLK"
+│  │  ├─ RET_VAL := #TEMP14
+│  │  └─ CDT := #TEMP15
+│  ├─ L LB 33; T DB6.DBB 3  // Time synchronization
+│  ├─ L LB 34; T DB6.DBB 4
+│  └─ L LB 35 check for time updates
+│
+├─ NETWORK 4-9: DISTRIBUTED I/O STATIONS
+│  ├─ CALL FB 453, DB 453  // Station 0x54, Port 0
+│  │  ├─ IN0 := B#16#54
+│  │  ├─ IN1 := W#16#0
+│  │  └─ OUT2-12 := LW 100-156
+│  │
+│  ├─ CALL FB 453, DB 454  // Station 0x54, Port 4
+│  │  ├─ IN0 := B#16#54
+│  │  ├─ IN1 := W#16#4
+│  │  └─ OUT2-12 := LW 120-136
+│  │
+│  ├─ CALL FB 453, DB 455  // Station 0x55, Port 0x20
+│  │  ├─ IN0 := B#16#55
+│  │  ├─ IN1 := W#16#20
+│  │  └─ OUT2-12 := LW 140-156
+│  │
+│  └─ CALL FB 453, DB 456-460  // Additional stations
+│
+└─ NETWORK 10: OUTPUT CONTROL
+   ├─ A M216.0; AN M217.0; = Q32.1  // Control output 1
+   ├─ AN M216.0; A M217.0; = Q32.2  // Control output 2
+   ├─ A M216.0; AN M217.0; = Q44.1  // Control output 3
+   └─ AN M216.0; A M217.0; = Q44.2  // Control output 4
+
+═══════════════════════════════════════════════════════════════════════════════════
+                         LUỒNG GIAO TIẾP ROBOT (FC112-113)
+═══════════════════════════════════════════════════════════════════════════════════
+
+ROBOT COMMUNICATION FLOW
+│
+├─ FC112: ROBOT STATUS MONITORING
+│  ├─ READ ROBOT STATUS
+│  │  ├─ L IW 100      // Robot status word
+│  │  ├─ L IW 102      // Robot position X
+│  │  ├─ L IW 104      // Robot position Y  
+│  │  ├─ L IW 106      // Robot position Z
+│  │  ├─ L IW 108      // Robot rotation RX
+│  │  ├─ L IW 110      // Robot rotation RY
+│  │  └─ L IW 112      // Robot rotation RZ
+│  │
+│  ├─ STATUS VALIDATION
+│  │  ├─ Check communication timeout
+│  │  ├─ Validate position ranges
+│  │  ├─ Check safety status
+│  │  └─ Error detection and logging
+│  │
+│  └─ UPDATE PLC DATA
+│     ├─ T DB10.DBW 20  // Store robot status
+│     ├─ T DB10.DBW 22  // Store position data
+│     └─ Update status bits in DB10
+│
+├─ FC113: ROBOT COMMAND TRANSMISSION  
+│  ├─ PREPARE COMMAND DATA
+│  │  ├─ L DB10.DBW 30  // Load target position X
+│  │  ├─ L DB10.DBW 32  // Load target position Y
+│  │  ├─ L DB10.DBW 34  // Load target position Z
+│  │  ├─ L DB10.DBW 36  // Load target rotation RX
+│  │  ├─ L DB10.DBW 38  // Load target rotation RY
+│  │  └─ L DB10.DBW 40  // Load target rotation RZ
+│  │
+│  ├─ SEND COMMANDS
+│  │  ├─ T QW 100       // Send position X
+│  │  ├─ T QW 102       // Send position Y
+│  │  ├─ T QW 104       // Send position Z
+│  │  ├─ T QW 106       // Send rotation RX
+│  │  ├─ T QW 108       // Send rotation RY
+│  │  ├─ T QW 110       // Send rotation RZ
+│  │  ├─ T QW 112       // Send speed override
+│  │  └─ T QW 114       // Send program number
+│  │
+│  ├─ CONTROL SIGNALS
+│  │  ├─ = Q48.0        // Robot start signal
+│  │  ├─ = Q48.1        // Robot stop signal
+│  │  ├─ = Q48.2        // Robot reset signal
+│  │  ├─ = Q48.3        // Emergency stop signal
+│  │  ├─ = Q48.4        // Gripper open
+│  │  ├─ = Q48.5        // Gripper close
+│  │  └─ = Q48.6        // Safety enable
+│  │
+│  └─ HANDSHAKING
+│     ├─ Wait for robot acknowledge
+│     ├─ Check command execution status
+│     ├─ Handle communication errors
+│     └─ Retry failed commands
+
+═══════════════════════════════════════════════════════════════════════════════════
+                       LUỒNG PALLETIZING OPERATION
+═══════════════════════════════════════════════════════════════════════════════════
+
+PALLETIZING SEQUENCE FLOW
+│
+├─ PHASE 1: INITIALIZATION
+│  ├─ System power-up và safety check
+│  ├─ Robot homing sequence
+│  ├─ Pallet position verification
+│  ├─ Product detection system check
+│  └─ Communication link validation
+│
+├─ PHASE 2: PRODUCT DETECTION
+│  ├─ Conveyor system start
+│  ├─ Wait for product present signal (I64.1)
+│  ├─ Vision system product identification
+│  ├─ Quality check and validation
+│  └─ Product position calculation
+│
+├─ PHASE 3: ROBOT PICKUP
+│  ├─ Calculate pickup position
+│  ├─ Send position data to robot (FC113)
+│  ├─ Robot move to pickup position
+│  ├─ Gripper operation (open/close)
+│  ├─ Pickup confirmation signal
+│  └─ Move to intermediate position
+│
+├─ PHASE 4: PALLETIZING PLACEMENT
+│  ├─ Calculate pallet position based on pattern
+│  ├─ Layer and position management
+│  ├─ Send placement position to robot
+│  ├─ Robot move to placement position
+│  ├─ Product placement and gripper release
+│  └─ Move to safe position
+│
+├─ PHASE 5: PATTERN MANAGEMENT
+│  ├─ Update position counters
+│  ├─ Check layer completion
+│  ├─ Inter-layer separator handling (if required)
+│  ├─ Calculate next product position
+│  └─ Pattern optimization
+│
+├─ PHASE 6: PALLET MANAGEMENT
+│  ├─ Check pallet full condition
+│  ├─ Pallet removal signal
+│  ├─ New pallet positioning
+│  ├─ Pallet verification
+│  └─ Reset position counters
+│
+└─ PHASE 7: QUALITY & MONITORING
+   ├─ Cycle time monitoring
+   ├─ Production counting
+   ├─ Error logging and reporting
+   ├─ Performance data collection
+   └─ MES data transmission
+
+═══════════════════════════════════════════════════════════════════════════════════
+                         LUỒNG XỬ LÝ LỖI VÀ REDUNDANCY
+═══════════════════════════════════════════════════════════════════════════════════
+
+ERROR HANDLING AND REDUNDANCY FLOW
+│
+├─ OB70/OB72: I/O REDUNDANCY ERROR
+│  ├─ Detect I/O module failure
+│  ├─ CALL FC 450 (redundancy diagnostic)
+│  ├─ CALL FB 452, DB 452 (detailed error analysis)
+│  ├─ Switch to backup I/O channel
+│  ├─ Log error event
+│  └─ Continue operation if possible
+│
+├─ OB80-OB88: HARDWARE DIAGNOSTIC INTERRUPTS
+│  ├─ OB80: Time error handling
+│  │  └─ CALL FC 450 (time synchronization)
+│  │
+│  ├─ OB81: Power supply error
+│  │  ├─ Battery backup activation
+│  │  └─ Critical data saving
+│  │
+│  ├─ OB82: Module error
+│  │  ├─ CALL FB 452, DB 452
+│  │  ├─ CALL FC 451 (error recovery)
+│  │  └─ Module replacement notification
+│  │
+│  ├─ OB83: Module removed
+│  │  ├─ Detect module absence
+│  │  ├─ Disable related functions
+│  │  └─ Maintenance notification
+│  │
+│  ├─ OB85: Program error
+│  │  ├─ CALL FB 452, DB 452
+│  │  ├─ Error code analysis
+│  │  └─ Safe state activation
+│  │
+│  ├─ OB86: Module fault
+│  │  ├─ Hardware fault detection
+│  │  ├─ Fault isolation
+│  │  └─ Redundancy activation
+│  │
+│  ├─ OB87: Communication error
+│  │  ├─ Network diagnosis
+│  │  ├─ Retry mechanism
+│  │  └─ Backup communication
+│  │
+│  └─ OB88: Processing error
+│     ├─ CPU overload detection
+│     ├─ Task priority management
+│     └─ Load balancing
+│
+├─ CPU REDUNDANCY MANAGEMENT
+│  ├─ Continuous health monitoring
+│  ├─ Data synchronization between CPUs
+│  ├─ Automatic failover on primary CPU fault
+│  ├─ Hot standby operation
+│  └─ Seamless switchover
+│
+├─ COMMUNICATION REDUNDANCY
+│  ├─ Primary: Profibus DP
+│  ├─ Secondary: Industrial Ethernet
+│  ├─ Automatic path switching
+│  ├─ Data integrity verification
+│  └─ Communication timeout handling
+│
+└─ SYSTEM RECOVERY PROCEDURES
+   ├─ Graceful degradation mode
+   ├─ Emergency stop activation
+   ├─ Safe position movement
+   ├─ Data backup and restore
+   └─ System restart procedures
+
+═══════════════════════════════════════════════════════════════════════════════════
+                            DATA FLOW ARCHITECTURE
+═══════════════════════════════════════════════════════════════════════════════════
+
+DATA BLOCK RELATIONSHIP FLOW
+│
+├─ PROFIBUS CONFIGURATION LAYER
+│  ├─ DB1 ──→ Master station configuration
+│  └─ DB2 ──→ Slave station configuration
+│              │
+│              ▼
+├─ CONTROL DATA LAYER
+│  ├─ DB5 ──→ Zone 1 control data ──┐
+│  ├─ DB6 ──→ Zone 2 control data ──┼──→ Main Control Logic
+│  ├─ DB7 ──→ Zone 3 control data ──┘
+│  └─ DB10 ─→ Main status data ──────→ Status Management
+│              │
+│              ▼
+├─ EXTENDED DATA LAYER
+│  ├─ DB55 ─→ Zone 1 extended data ──┐
+│  ├─ DB56 ─→ Zone 2 extended data ──┼──→ Extended Control
+│  ├─ DB57 ─→ Zone 3 extended data ──┘
+│  └─ DB60 ─→ Extended status data ───→ Backup Status
+│              │
+│              ▼
+├─ DIAGNOSTIC DATA LAYER
+│  ├─ DB423 ─→ System diagnostic config ──→ Health Monitoring
+│  ├─ DB17,20,21,70,71 ─→ Auxiliary data ──→ Support Functions
+│              │
+│              ▼
+└─ REDUNDANT I/O LAYER
+   ├─ DB450 ─→ FB450 instance (RED_IN)
+   ├─ DB451 ─→ FB451 instance (RED_SUP)
+   ├─ DB452 ─→ FB452 instance (RED_DIAG)
+   └─ DB453-460 ─→ FB453 instances (RED_STAT)
+              │
+              ▼
+        Distributed I/O Network
+
+═══════════════════════════════════════════════════════════════════════════════════
+                           TIMING DIAGRAM
+═══════════════════════════════════════════════════════════════════════════════════
+
+TIME CYCLE ANALYSIS:
+
+OB1 (Main Program): ████████████████████████████████████████ 10ms cycle
+                    │   │   │   │   │   │   │   │   │   │
+                    0  10  20  30  40  50  60  70  80  90ms
+
+OB35 (Cyclic Int):  ████████████████████████████████████████ 50ms cycle  
+                    │           │           │           │
+                    0          50         100         150ms
+
+Robot Comm:         ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ <5ms response
+FC112/113:          │ │ │ │ │ │ │ │ │ │ │ │ │ │ │ │ │ │ │ │
+                    Continuous monitoring và command transmission
+
+I/O Update:         ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ Real-time
+Profibus DP:        │ │ │ │ │ │ │ │ │ │ │ │ │ │ │ │ │ │ │ │
+                    1-2ms update cycle
+
+Production Cycle:   ████████████████████████████████████████ 8-12 seconds
+Palletizing:        │Product│ Pick │Transport│ Place │ Return│
+                    │Detect │  up  │   to    │  on   │  to   │
+                    │       │      │  Pallet │Pallet │ Home  │
+
+═══════════════════════════════════════════════════════════════════════════════════
+                              SUMMARY FLOW
+═══════════════════════════════════════════════════════════════════════════════════
+
+COMPLETE SYSTEM OPERATION SUMMARY:
+
+1. SYSTEM STARTUP ──→ INITIALIZATION ──→ SAFETY CHECK ──→ READY STATE
+
+2. READY STATE ──→ MODE SELECTION (Manual/Auto/Maintenance)
+
+3. AUTO MODE ──→ PALLETIZING OPERATION:
+   ├─ Product Detection (Vision + Sensors)
+   ├─ Robot Pickup (Position Calculation + Movement)
+   ├─ Quality Check (Vision Validation)
+   ├─ Pallet Placement (Pattern Management)
+   ├─ Cycle Completion (Status Update)
+   └─ Repeat or Pallet Change
+
+4. CONTINUOUS BACKGROUND PROCESSES:
+   ├─ OB1: Main control logic (10ms)
+   ├─ OB35: I/O và diagnostic (50ms)  
+   ├─ FC112/113: Robot communication (<5ms)
+   ├─ FB450-453: Redundancy management
+   ├─ Error handling (OB70-88)
+   └─ MES data exchange
+
+5. ERROR CONDITIONS ──→ DIAGNOSTIC ──→ RECOVERY ──→ CONTINUE/STOP
+
+6. SHUTDOWN ──→ SAFE POSITION ──→ DATA SAVE ──→ POWER DOWN
+
+═══════════════════════════════════════════════════════════════════════════════════
+                            PERFORMANCE METRICS
+═══════════════════════════════════════════════════════════════════════════════════
+
+• System Availability: 99.9% (với redundancy)
+• Robot Communication Response: <5ms
+• PLC Scan Time: 10ms (OB1), 50ms (OB35)  
+• Palletizing Cycle Time: 8-12 seconds/product
+• I/O Update Rate: 1-2ms (Profibus DP)
+• Diagnostic Response: Real-time
+• Failover Time: <100ms (CPU switching)
+• Production Rate: 300-450 products/hour
+• Error Recovery Time: <30 seconds
+• MES Data Exchange: 1-5 seconds
+
+═══════════════════════════════════════════════════════════════════════════════════
+                              END OF FLOW DIAGRAM
+═══════════════════════════════════════════════════════════════════════════════════

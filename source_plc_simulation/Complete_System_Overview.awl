@@ -1,0 +1,209 @@
+// =============================================================================
+// SIEMENS S7-400H PALLETIZING SYSTEM - COMPLETE AWL SOURCE CODE
+// =============================================================================
+// Project: PLC S7-400H Palletizing System Analysis
+// Date: 17/07/2025
+// System: Siemens S7-400H CPU 412-3H + ABB Robot IRC5
+// Application: Palletizing automation with 2 independent areas
+// =============================================================================
+
+// This file contains all the main program blocks for the palletizing system
+// simulation, including:
+// - Organization blocks (OB1, OB35)
+// - Function blocks (FB5)
+// - Functions (FC50, FC52, FC200, FC201)
+// - Data blocks (DB100, DB101, DB102)
+
+// =============================================================================
+// FILE LISTING IN source_plc_simulation FOLDER:
+// =============================================================================
+// 1. OB1_Main.awl                 - Main program (cyclic execution)
+// 2. OB35_CyclicInterrupt.awl     - 100ms cyclic interrupt
+// 3. FB5_SafetyLogic.awl          - Safety logic function block
+// 4. FC50_Area1Control.awl        - Area 1 main control logic
+// 5. FC52_Area1RobotComm.awl      - Area 1 robot communication
+// 6. FC200_LaptopComm.awl         - Laptop communication handler
+// 7. FC201_WriteCoordinate.awl    - Write coordinate set function
+// 8. Complete_System_Overview.awl - This overview file
+
+// =============================================================================
+// PROGRAM STRUCTURE OVERVIEW:
+// =============================================================================
+
+/*
+OB1 - Main Program (Cyclic)
+├── System initialization and safety checks
+├── Area 1 Control Logic
+│   ├── FC50 - Main control
+│   ├── FC51 - I/O processing
+│   ├── FC52 - Robot communication
+│   ├── FC53 - Position control
+│   ├── FC54 - Safety interlocks (calls FB5)
+│   └── FC55 - Data logging
+├── Area 2 Control Logic
+│   ├── FC60 - Main control
+│   ├── FC61 - I/O processing
+│   ├── FC62 - Robot communication
+│   ├── FC63 - Position control
+│   ├── FC64 - Safety interlocks (calls FB5)
+│   └── FC65 - Data logging
+├── Coordinate Exchange System
+│   ├── FC200 - Laptop communication handler
+│   ├── FC201 - Write coordinate set
+│   ├── FC202 - Read coordinate set
+│   ├── FC203 - Execute coordinate set
+│   ├── FC204 - Get robot position
+│   └── FC205 - System diagnostics
+└── System diagnostics and monitoring
+    ├── FC102 - Area 1 diagnostics
+    ├── FC112 - Area 2 diagnostics
+    ├── FC103 - Area 1 recipe management
+    └── FC113 - Area 2 recipe management
+
+OB35 - Cyclic Interrupt (100ms)
+├── System monitoring
+├── Communication timeout checking
+├── Production counters
+├── Alarm processing
+├── Data logging
+└── Watchdog refresh
+
+FB5 - Safety Logic
+├── Emergency stop monitoring
+├── Light curtain monitoring
+├── Safety relay monitoring
+├── Safety state machine
+├── Periodic safety testing
+└── Safety reset handling
+*/
+
+// =============================================================================
+// DATA BLOCK USAGE:
+// =============================================================================
+
+/*
+DB1-DB2:   System configuration and parameters
+DB5-DB7:   Area 1 data (configuration, process data, recipes)
+DB10:      Area 1 control data
+DB55-DB57: Area 2 data (configuration, process data, recipes)
+DB60:      Area 2 control data
+DB100:     Laptop communication interface
+DB101:     Robot communication buffer
+DB102:     Coordinate storage buffer and system diagnostics
+*/
+
+// =============================================================================
+// I/O MAPPING SUMMARY:
+// =============================================================================
+
+/*
+AREA 1 INPUTS:
+I0.0, I0.4   - Emergency stop circuits
+I0.1         - Start button
+I0.5         - Mode selector
+I1.x         - Conveyor sensors
+I4.x         - Robot status inputs
+I5.x         - Position feedback
+I64.x        - Robot communication inputs
+I65.5        - Light curtain (common safety)
+
+AREA 1 OUTPUTS:
+Q32.x        - Conveyor controls
+Q36.x        - Robot command outputs
+Q37.x        - Gripper/Tool controls
+Q64.x        - Robot communication outputs
+Q65.x        - Status lamps
+Q77.x        - Safety outputs
+
+AREA 2 INPUTS/OUTPUTS:
+Similar to Area 1 but with offset addresses (+50 for inputs, +50 for outputs)
+*/
+
+// =============================================================================
+// COMMUNICATION PROTOCOLS:
+// =============================================================================
+
+/*
+LAPTOP <-> PLC:
+- Protocol: Siemens S7 TCP/IP
+- Port: 102
+- Data: DB100 (command/status interface)
+- Handshake: Command/status word protocol
+
+PLC <-> ROBOT:
+- Protocol: PROFIBUS-DP + Digital I/O
+- Data exchange: Position commands and feedback
+- Handshake: Digital I/O signals
+- Status: Word-based status exchange
+*/
+
+// =============================================================================
+// SAFETY SYSTEM:
+// =============================================================================
+
+/*
+Safety Level: SIL 2 (IEC 61508)
+Components:
+- Dual emergency stop circuits
+- Light curtain monitoring
+- Safety relay monitoring
+- Periodic safety testing
+- Safety state machine (FB5)
+- Redundant CPU monitoring
+*/
+
+// =============================================================================
+// SIMULATION FEATURES:
+// =============================================================================
+
+/*
+This AWL source code is designed for:
+1. SIMATIC S7-PLCSIM Advanced simulation
+2. Virtual robot communication testing
+3. Coordinate exchange system testing
+4. Safety system validation
+5. Production sequence verification
+6. HMI integration testing
+7. Diagnostic system testing
+*/
+
+// =============================================================================
+// USAGE INSTRUCTIONS:
+// =============================================================================
+
+/*
+1. Import all AWL files into SIMATIC Manager
+2. Configure hardware with S7-400H CPU 412-3H
+3. Compile and download to S7-PLCSIM Advanced
+4. Configure Data Blocks DB100, DB101, DB102
+5. Set up virtual I/O for robot simulation
+6. Test coordinate exchange functionality
+7. Verify safety system operation
+8. Run production sequence tests
+*/
+
+// =============================================================================
+// MAINTENANCE AND TROUBLESHOOTING:
+// =============================================================================
+
+/*
+Key monitoring points:
+- MW510: Area 1 status word
+- MW520: Area 2 status word
+- DB100.DBW2: Communication status
+- DB10.DBW102: Area 1 error code
+- DB60.DBW102: Area 2 error code
+- M1.1: Overall safety status
+- M1.7: System error flag
+
+Error codes:
+0001-0010: Input validation errors
+0011-0020: Safety system errors
+0021-0030: Communication errors
+0031-0040: Robot interface errors
+0041-0050: Coordinate system errors
+*/
+
+// =============================================================================
+// END OF OVERVIEW
+// =============================================================================

@@ -1,0 +1,344 @@
+FUNCTION FC52 : VOID
+TITLE = 'Area 1 Robot Communication'
+VERSION : 0.1
+
+VAR_INPUT
+  Enable : BOOL ;                   // Enable communication
+  Reset : BOOL ;                    // Reset communication
+END_VAR
+
+VAR_OUTPUT
+  CommActive : BOOL ;               // Communication active
+  CommError : BOOL ;                // Communication error
+  RobotReady : BOOL ;               // Robot ready status
+END_VAR
+
+VAR_TEMP
+  HandshakeBit : BOOL ;             // Handshake bit
+  CommandWord : WORD ;              // Command word to robot
+  StatusWord : WORD ;               // Status word from robot
+  PositionX : DINT ;                // X coordinate
+  PositionY : DINT ;                // Y coordinate
+  PositionZ : DINT ;                // Z coordinate
+  CommTimeout : TIME ;              // Communication timeout
+END_VAR
+
+BEGIN
+// =============================================================================
+// FUNCTION FC52 - AREA 1 ROBOT COMMUNICATION
+// =============================================================================
+// Description: Handles communication between PLC and ABB IRC5 robot Area 1
+// Called from: OB1 Main Program
+// Protocol: Digital I/O + Data Words (PROFIBUS-DP)
+// =============================================================================
+
+// -----------------------------------------------------------------------
+// COMMUNICATION ENABLE CHECK
+// -----------------------------------------------------------------------
+
+// Check if communication is enabled
+      A     #Enable
+      A     M12.0                   // Area 1 enabled
+      =     #CommActive
+
+      A     #CommActive
+      JCN   COMM_DISABLED
+
+// -----------------------------------------------------------------------
+// HANDSHAKE PROTOCOL
+// -----------------------------------------------------------------------
+
+// Read handshake bit from robot
+      A     I64.0                   // Robot handshake input
+      =     #HandshakeBit
+
+// Generate PLC handshake
+      A     #HandshakeBit
+      =     Q64.0                   // PLC handshake output
+
+// -----------------------------------------------------------------------
+// COMMAND TRANSMISSION TO ROBOT
+// -----------------------------------------------------------------------
+
+// Build command word based on current operation
+      L     DB10.DBW100             // Current step
+      
+      // Step 2: Pick command
+      L     2
+      ==I
+      JC    CMD_PICK
+      
+      // Step 3: Move to pallet
+      L     3
+      ==I
+      JC    CMD_MOVE_PALLET
+      
+      // Step 4: Place command
+      L     4
+      ==I
+      JC    CMD_PLACE
+      
+      // Step 5: Return home
+      L     5
+      ==I
+      JC    CMD_HOME
+      
+      // Default: No command
+      L     0
+      T     #CommandWord
+      JU    SEND_COMMAND
+
+CMD_PICK:
+      L     1
+      T     #CommandWord
+      JU    SEND_COMMAND
+
+CMD_MOVE_PALLET:
+      L     2
+      T     #CommandWord
+      JU    SEND_COMMAND
+
+CMD_PLACE:
+      L     3
+      T     #CommandWord
+      JU    SEND_COMMAND
+
+CMD_HOME:
+      L     4
+      T     #CommandWord
+      JU    SEND_COMMAND
+
+SEND_COMMAND:
+      // Send command word to robot
+      L     #CommandWord
+      T     QW64                    // Command word output
+
+// -----------------------------------------------------------------------
+// POSITION DATA TRANSMISSION
+// -----------------------------------------------------------------------
+
+// Get current target position from coordinate exchange system
+      A     DB101.DBX2.0            // Robot command active
+      JCN   USE_DEFAULT_POS
+
+// Use coordinate from coordinate exchange
+      L     DB101.DBW8              // X coordinate
+      T     #PositionX
+      
+      L     DB101.DBW10             // Y coordinate
+      T     #PositionY
+      
+      L     DB101.DBW12             // Z coordinate
+      T     #PositionZ
+      
+      JU    SEND_POSITION
+
+USE_DEFAULT_POS:
+      // Use default positions from recipe
+      L     DB7.DBW0                // Default X
+      T     #PositionX
+      
+      L     DB7.DBW2                // Default Y
+      T     #PositionY
+      
+      L     DB7.DBW4                // Default Z
+      T     #PositionZ
+
+SEND_POSITION:
+      // Send position data to robot
+      L     #PositionX
+      T     QD66                    // X coordinate (32-bit)
+      
+      L     #PositionY
+      T     QD70                    // Y coordinate (32-bit)
+      
+      L     #PositionZ
+      T     QD74                    // Z coordinate (32-bit)
+
+// -----------------------------------------------------------------------
+// GRIPPER CONTROL
+// -----------------------------------------------------------------------
+
+// Get gripper command
+      L     DB101.DBW20             // Gripper command from coordinate exchange
+      L     0
+      ==I
+      JC    GRIPPER_OPEN
+      
+      L     1
+      ==I
+      JC    GRIPPER_CLOSE
+      
+      // Default: No change
+      JU    GRIPPER_DONE
+
+GRIPPER_OPEN:
+      S     Q37.1                   // Gripper open command
+      R     Q37.2                   // Clear gripper close
+      JU    GRIPPER_DONE
+
+GRIPPER_CLOSE:
+      S     Q37.2                   // Gripper close command
+      R     Q37.1                   // Clear gripper open
+      JU    GRIPPER_DONE
+
+GRIPPER_DONE:
+
+// -----------------------------------------------------------------------
+// STATUS RECEPTION FROM ROBOT
+// -----------------------------------------------------------------------
+
+// Read robot status word
+      L     IW64                    // Robot status word
+      T     #StatusWord
+      
+      // Store in DB for monitoring
+      L     #StatusWord
+      T     DB10.DBW300
+
+// Decode robot status bits
+      L     #StatusWord
+      
+      // Bit 0: Robot ready
+      L     W#16#0001
+      AW
+      L     0
+      <>I
+      =     #RobotReady
+      
+      // Bit 1: Robot moving
+      L     W#16#0002
+      AW
+      L     0
+      <>I
+      =     M10.1                   // Robot moving flag
+      
+      // Bit 2: Robot at position
+      L     W#16#0004
+      AW
+      L     0
+      <>I
+      =     M10.2                   // Robot at position
+      
+      // Bit 3: Robot error
+      L     W#16#0008
+      AW
+      L     0
+      <>I
+      =     M10.3                   // Robot error flag
+
+// -----------------------------------------------------------------------
+// FEEDBACK POSITION DATA
+// -----------------------------------------------------------------------
+
+// Read robot current position
+      L     ID70                    // Robot current X
+      T     DB10.DBD302             // Store current X
+      
+      L     ID74                    // Robot current Y
+      T     DB10.DBD306             // Store current Y
+      
+      L     ID78                    // Robot current Z
+      T     DB10.DBD310             // Store current Z
+
+// Update coordinate exchange feedback
+      L     DB10.DBD302
+      T     DB101.DBW8              // Update feedback X
+      
+      L     DB10.DBD306
+      T     DB101.DBW10             // Update feedback Y
+      
+      L     DB10.DBD310
+      T     DB101.DBW12             // Update feedback Z
+
+// -----------------------------------------------------------------------
+// COMMUNICATION ERROR DETECTION
+// -----------------------------------------------------------------------
+
+// Check for communication timeout
+      A     #HandshakeBit
+      TON   T10, T#5S               // 5 second timeout
+      
+      A     T10
+      =     #CommError
+
+// Check robot error status
+      A     M10.3                   // Robot error flag
+      O     #CommError
+      =     #CommError
+
+// Store communication error
+      A     #CommError
+      =     DB10.DBX400.0
+
+// -----------------------------------------------------------------------
+// COMMUNICATION RESET
+// -----------------------------------------------------------------------
+
+      A     #Reset
+      JCN   COMM_NORMAL
+
+// Reset communication
+      R     Q64.0                   // Clear handshake
+      
+      L     0
+      T     QW64                    // Clear command word
+      T     QD66                    // Clear position data
+      T     QD70
+      T     QD74
+      
+      // Reset error flags
+      R     #CommError
+      R     DB10.DBX400.0
+      
+      JU    COMM_EXIT
+
+// -----------------------------------------------------------------------
+// NORMAL OPERATION
+// -----------------------------------------------------------------------
+
+COMM_NORMAL:
+      // Normal communication operation
+      // Update communication active flag
+      A     #RobotReady
+      AN    #CommError
+      =     #CommActive
+      
+      JU    COMM_EXIT
+
+// -----------------------------------------------------------------------
+// COMMUNICATION DISABLED
+// -----------------------------------------------------------------------
+
+COMM_DISABLED:
+      // Clear all robot outputs
+      R     Q64.0                   // Clear handshake
+      
+      L     0
+      T     QW64                    // Clear command word
+      T     QD66                    // Clear position data
+      T     QD70
+      T     QD74
+      
+      // Clear flags
+      R     #CommActive
+      R     #RobotReady
+      
+      JU    COMM_EXIT
+
+// -----------------------------------------------------------------------
+// EXIT
+// -----------------------------------------------------------------------
+
+COMM_EXIT:
+      // Update status outputs
+      A     #CommActive
+      =     Q65.3                   // Communication active lamp
+      
+      A     #CommError
+      =     Q65.4                   // Communication error lamp
+      
+      A     #RobotReady
+      =     Q65.5                   // Robot ready lamp
+
+END_FUNCTION

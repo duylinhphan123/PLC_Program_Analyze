@@ -1,0 +1,382 @@
+FUNCTION FC201 : VOID
+TITLE = 'Write Coordinate Set'
+VERSION : 0.1
+
+VAR_INPUT
+  Enable : BOOL ;                   // Enable function
+END_VAR
+
+VAR_OUTPUT
+  Done : BOOL ;                     // Operation completed
+  Error : BOOL ;                    // Error occurred
+  ErrorCode : WORD ;                // Error code
+END_VAR
+
+VAR_TEMP
+  AreaSelect : INT ;                // Area selection (1 or 2)
+  CoordSet : INT ;                  // Coordinate set number (1-10)
+  XCoord : DINT ;                   // X coordinate
+  YCoord : DINT ;                   // Y coordinate
+  ZCoord : DINT ;                   // Z coordinate
+  RXRot : INT ;                     // RX rotation
+  RYRot : INT ;                     // RY rotation
+  RZRot : INT ;                     // RZ rotation
+  GripperCmd : INT ;                // Gripper command
+  SpeedOverride : INT ;             // Speed override
+  BaseAddress : INT ;               // Base address for storage
+  ValidationOK : BOOL ;             // Validation result
+END_VAR
+
+BEGIN
+// =============================================================================
+// FUNCTION FC201 - WRITE COORDINATE SET
+// =============================================================================
+// Description: Writes coordinate data from laptop to PLC coordinate buffer
+// Called from: FC200 Laptop Communication Handler
+// Memory: Uses DB100 (input), DB102 (storage)
+// =============================================================================
+
+// -----------------------------------------------------------------------
+// ENABLE CHECK
+// -----------------------------------------------------------------------
+
+      A     #Enable
+      JCN   WRITE_DISABLED
+
+// -----------------------------------------------------------------------
+// READ INPUT DATA FROM DB100
+// -----------------------------------------------------------------------
+
+// Read area selection
+      L     DB100.DBW4              // Area selection
+      T     #AreaSelect
+
+// Read coordinate set number
+      L     DB100.DBW6              // Coordinate set
+      T     #CoordSet
+
+// Read coordinate data
+      L     DB100.DBW8              // X coordinate
+      T     #XCoord
+      
+      L     DB100.DBW10             // Y coordinate
+      T     #YCoord
+      
+      L     DB100.DBW12             // Z coordinate
+      T     #ZCoord
+      
+      L     DB100.DBW14             // RX rotation
+      T     #RXRot
+      
+      L     DB100.DBW16             // RY rotation
+      T     #RYRot
+      
+      L     DB100.DBW18             // RZ rotation
+      T     #RZRot
+      
+      L     DB100.DBW20             // Gripper command
+      T     #GripperCmd
+      
+      L     DB100.DBW22             // Speed override
+      T     #SpeedOverride
+
+// -----------------------------------------------------------------------
+// INPUT VALIDATION
+// -----------------------------------------------------------------------
+
+// Validate area selection
+      L     #AreaSelect
+      L     1
+      <I
+      JC    ERROR_INVALID_AREA
+      
+      L     #AreaSelect
+      L     2
+      >I
+      JC    ERROR_INVALID_AREA
+
+// Validate coordinate set number
+      L     #CoordSet
+      L     1
+      <I
+      JC    ERROR_INVALID_SET
+      
+      L     #CoordSet
+      L     10
+      >I
+      JC    ERROR_INVALID_SET
+
+// Validate coordinate ranges
+      // X coordinate range: -2000 to +2000 mm
+      L     #XCoord
+      L     L#-2000
+      <D
+      JC    ERROR_COORD_RANGE
+      
+      L     #XCoord
+      L     L#2000
+      >D
+      JC    ERROR_COORD_RANGE
+
+// Y coordinate range: -2000 to +2000 mm
+      L     #YCoord
+      L     L#-2000
+      <D
+      JC    ERROR_COORD_RANGE
+      
+      L     #YCoord
+      L     L#2000
+      >D
+      JC    ERROR_COORD_RANGE
+
+// Z coordinate range: -100 to +2000 mm
+      L     #ZCoord
+      L     L#-100
+      <D
+      JC    ERROR_COORD_RANGE
+      
+      L     #ZCoord
+      L     L#2000
+      >D
+      JC    ERROR_COORD_RANGE
+
+// Validate rotation ranges (-18000 to +18000 = -180.00 to +180.00 degrees)
+      L     #RXRot
+      L     -18000
+      <I
+      JC    ERROR_ROTATION_RANGE
+      
+      L     #RXRot
+      L     18000
+      >I
+      JC    ERROR_ROTATION_RANGE
+
+// Validate gripper command (0=Open, 1=Close, 2=Special)
+      L     #GripperCmd
+      L     0
+      <I
+      JC    ERROR_GRIPPER_CMD
+      
+      L     #GripperCmd
+      L     2
+      >I
+      JC    ERROR_GRIPPER_CMD
+
+// Validate speed override (10-100%)
+      L     #SpeedOverride
+      L     10
+      <I
+      JC    ERROR_SPEED_RANGE
+      
+      L     #SpeedOverride
+      L     100
+      >I
+      JC    ERROR_SPEED_RANGE
+
+// All validation passed
+      S     #ValidationOK
+      JU    CALC_ADDRESS
+
+// -----------------------------------------------------------------------
+// VALIDATION ERRORS
+// -----------------------------------------------------------------------
+
+ERROR_INVALID_AREA:
+      L     16#0001
+      T     #ErrorCode
+      JU    WRITE_ERROR
+
+ERROR_INVALID_SET:
+      L     16#0002
+      T     #ErrorCode
+      JU    WRITE_ERROR
+
+ERROR_COORD_RANGE:
+      L     16#0003
+      T     #ErrorCode
+      JU    WRITE_ERROR
+
+ERROR_ROTATION_RANGE:
+      L     16#0004
+      T     #ErrorCode
+      JU    WRITE_ERROR
+
+ERROR_GRIPPER_CMD:
+      L     16#0005
+      T     #ErrorCode
+      JU    WRITE_ERROR
+
+ERROR_SPEED_RANGE:
+      L     16#0006
+      T     #ErrorCode
+      JU    WRITE_ERROR
+
+// -----------------------------------------------------------------------
+// CALCULATE STORAGE ADDRESS
+// -----------------------------------------------------------------------
+
+CALC_ADDRESS:
+      // Calculate base address in DB102
+      // Area 1: Sets 1-10 at DBW0-199 (20 words per set)
+      // Area 2: Sets 1-10 at DBW200-399 (20 words per set)
+      
+      L     #AreaSelect
+      L     1
+      ==I
+      JC    AREA1_ADDR
+      
+      // Area 2 calculation
+      L     #CoordSet
+      L     1
+      -I
+      L     20
+      *I
+      L     200
+      +I
+      T     #BaseAddress
+      JU    STORE_DATA
+
+AREA1_ADDR:
+      // Area 1 calculation
+      L     #CoordSet
+      L     1
+      -I
+      L     20
+      *I
+      T     #BaseAddress
+
+// -----------------------------------------------------------------------
+// STORE COORDINATE DATA
+// -----------------------------------------------------------------------
+
+STORE_DATA:
+      // Store coordinate data in DB102
+      // Each set uses 20 words (40 bytes)
+      
+      // Word 0-1: X coordinate (DINT)
+      L     #XCoord
+      T     DB102.DBD[#BaseAddress]
+      
+      // Word 2-3: Y coordinate (DINT)
+      L     #YCoord
+      T     DB102.DBD[#BaseAddress + 4]
+      
+      // Word 4-5: Z coordinate (DINT)
+      L     #ZCoord
+      T     DB102.DBD[#BaseAddress + 8]
+      
+      // Word 6: RX rotation
+      L     #RXRot
+      T     DB102.DBW[#BaseAddress + 12]
+      
+      // Word 7: RY rotation
+      L     #RYRot
+      T     DB102.DBW[#BaseAddress + 14]
+      
+      // Word 8: RZ rotation
+      L     #RZRot
+      T     DB102.DBW[#BaseAddress + 16]
+      
+      // Word 9: Gripper command
+      L     #GripperCmd
+      T     DB102.DBW[#BaseAddress + 18]
+      
+      // Word 10: Speed override
+      L     #SpeedOverride
+      T     DB102.DBW[#BaseAddress + 20]
+      
+      // Word 11-12: Timestamp
+      CALL  FC8                     // Get system time
+      T     DB102.DBD[#BaseAddress + 22]
+      
+      // Word 13: Validation flag
+      L     1
+      T     DB102.DBW[#BaseAddress + 26]
+      
+      // Word 14-19: Reserved for future use
+      L     0
+      T     DB102.DBW[#BaseAddress + 28]
+      T     DB102.DBW[#BaseAddress + 30]
+      T     DB102.DBW[#BaseAddress + 32]
+      T     DB102.DBW[#BaseAddress + 34]
+      T     DB102.DBW[#BaseAddress + 36]
+      T     DB102.DBW[#BaseAddress + 38]
+
+// -----------------------------------------------------------------------
+// UPDATE CHECKSUM
+// -----------------------------------------------------------------------
+
+      // Calculate simple checksum for data integrity
+      L     #XCoord
+      L     #YCoord
+      +D
+      L     #ZCoord
+      +D
+      
+      // Store checksum
+      T     DB102.DBD[#BaseAddress + 40]
+
+// -----------------------------------------------------------------------
+// SUCCESS COMPLETION
+// -----------------------------------------------------------------------
+
+      // Set completion flag
+      S     #Done
+      
+      // Clear error
+      R     #Error
+      L     0
+      T     #ErrorCode
+      
+      // Update success counter
+      L     DB102.DBW450
+      L     1
+      +I
+      T     DB102.DBW450
+      
+      JU    WRITE_EXIT
+
+// -----------------------------------------------------------------------
+// ERROR HANDLING
+// -----------------------------------------------------------------------
+
+WRITE_ERROR:
+      // Set error flag
+      S     #Error
+      R     #Done
+      
+      // Store error code in DB100 for laptop
+      L     #ErrorCode
+      T     DB100.DBW28
+      
+      // Update error counter
+      L     DB102.DBW452
+      L     1
+      +I
+      T     DB102.DBW452
+      
+      JU    WRITE_EXIT
+
+// -----------------------------------------------------------------------
+// FUNCTION DISABLED
+// -----------------------------------------------------------------------
+
+WRITE_DISABLED:
+      // Function not enabled
+      R     #Done
+      R     #Error
+      L     0
+      T     #ErrorCode
+      
+      JU    WRITE_EXIT
+
+// -----------------------------------------------------------------------
+// EXIT
+// -----------------------------------------------------------------------
+
+WRITE_EXIT:
+      // Update operation timestamp
+      CALL  FC8                     // Get system time
+      T     DB102.DBD454            // Last operation timestamp
+
+END_FUNCTION

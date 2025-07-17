@@ -1,0 +1,120 @@
+DATA_BLOCK "DB102_SystemDiagnostics"
+TITLE = System Status & Diagnostics
+VERSION : 0.1
+
+STRUCT 
+   System_Mode : INT := 1;                           //System mode
+   PLC_Status : WORD := W#16#1;                     //PLC status
+   Communication_Status : WORD := W#16#1;           //Communication status
+   Overall_Health : INT := 100;                     //Overall health (%)
+   Cycle_Time_Current : TIME := T#50MS;             //Current cycle time
+   Cycle_Time_Max : TIME := T#100MS;                //Maximum cycle time
+   Cycle_Time_Min : TIME := T#30MS;                 //Minimum cycle time
+   Cycle_Time_Average : TIME := T#50MS;             //Average cycle time
+   Messages_Sent : DINT ;                           //Messages sent count
+   Messages_Received : DINT ;                       //Messages received count
+   Communication_Errors : INT ;                     //Communication errors count
+   Timeout_Count : INT ;                            //Timeout count
+   Robot_Movements : DINT ;                         //Robot movements count
+   Robot_Errors : INT ;                             //Robot errors count
+   Average_Movement_Time : TIME := T#2S;            //Average movement time
+   Last_Error_Code : WORD ;                         //Last error code
+   Last_Error_Time : TIME ;                         //Last error time
+   Error_History : ARRAY [1 .. 10] OF STRUCT       //Error history
+      Error_Code : WORD ;                           //Error code
+      Error_Time : TIME ;                           //Error time
+      Error_Count : INT ;                           //Error count
+   END_STRUCT ;
+   Memory_Usage : INT := 45;                        //Memory usage (%)
+   CPU_Load : INT := 30;                            //CPU load (%)
+   Temperature : INT := 55;                         //Temperature (°C)
+   Voltage : INT := 240;                            //Voltage (V*10)
+   Operating_Hours : TIME ;                         //Operating hours
+   Maintenance_Due : BOOL ;                         //Maintenance due
+   Calibration_Due : BOOL ;                         //Calibration due
+   Backup_Required : BOOL ;                         //Backup required
+   Reserved : ARRAY [1 .. 25] OF WORD ;            //Reserved for expansion
+END_STRUCT ;
+
+BEGIN
+   System_Mode := 1;
+   PLC_Status := W#16#1;
+   Communication_Status := W#16#1;
+   Overall_Health := 100;
+   Cycle_Time_Current := T#50MS;
+   Cycle_Time_Max := T#100MS;
+   Cycle_Time_Min := T#30MS;
+   Cycle_Time_Average := T#50MS;
+   Messages_Sent := L#0;
+   Messages_Received := L#0;
+   Communication_Errors := 0;
+   Timeout_Count := 0;
+   Robot_Movements := L#0;
+   Robot_Errors := 0;
+   Average_Movement_Time := T#2S;
+   Last_Error_Code := W#16#0;
+   Last_Error_Time := T#0MS;
+   Error_History[1].Error_Code := W#16#0;
+   Error_History[1].Error_Time := T#0MS;
+   Error_History[1].Error_Count := 0;
+   Error_History[2].Error_Code := W#16#0;
+   Error_History[2].Error_Time := T#0MS;
+   Error_History[2].Error_Count := 0;
+   Error_History[3].Error_Code := W#16#0;
+   Error_History[3].Error_Time := T#0MS;
+   Error_History[3].Error_Count := 0;
+   Error_History[4].Error_Code := W#16#0;
+   Error_History[4].Error_Time := T#0MS;
+   Error_History[4].Error_Count := 0;
+   Error_History[5].Error_Code := W#16#0;
+   Error_History[5].Error_Time := T#0MS;
+   Error_History[5].Error_Count := 0;
+   Error_History[6].Error_Code := W#16#0;
+   Error_History[6].Error_Time := T#0MS;
+   Error_History[6].Error_Count := 0;
+   Error_History[7].Error_Code := W#16#0;
+   Error_History[7].Error_Time := T#0MS;
+   Error_History[7].Error_Count := 0;
+   Error_History[8].Error_Code := W#16#0;
+   Error_History[8].Error_Time := T#0MS;
+   Error_History[8].Error_Count := 0;
+   Error_History[9].Error_Code := W#16#0;
+   Error_History[9].Error_Time := T#0MS;
+   Error_History[9].Error_Count := 0;
+   Error_History[10].Error_Code := W#16#0;
+   Error_History[10].Error_Time := T#0MS;
+   Error_History[10].Error_Count := 0;
+   Memory_Usage := 45;
+   CPU_Load := 30;
+   Temperature := 55;
+   Voltage := 240;
+   Operating_Hours := T#0MS;
+   Maintenance_Due := FALSE;
+   Calibration_Due := FALSE;
+   Backup_Required := FALSE;
+   Reserved[1] := W#16#0;
+   Reserved[2] := W#16#0;
+   Reserved[3] := W#16#0;
+   Reserved[4] := W#16#0;
+   Reserved[5] := W#16#0;
+   Reserved[6] := W#16#0;
+   Reserved[7] := W#16#0;
+   Reserved[8] := W#16#0;
+   Reserved[9] := W#16#0;
+   Reserved[10] := W#16#0;
+   Reserved[11] := W#16#0;
+   Reserved[12] := W#16#0;
+   Reserved[13] := W#16#0;
+   Reserved[14] := W#16#0;
+   Reserved[15] := W#16#0;
+   Reserved[16] := W#16#0;
+   Reserved[17] := W#16#0;
+   Reserved[18] := W#16#0;
+   Reserved[19] := W#16#0;
+   Reserved[20] := W#16#0;
+   Reserved[21] := W#16#0;
+   Reserved[22] := W#16#0;
+   Reserved[23] := W#16#0;
+   Reserved[24] := W#16#0;
+   Reserved[25] := W#16#0;
+END_DATA_BLOCK

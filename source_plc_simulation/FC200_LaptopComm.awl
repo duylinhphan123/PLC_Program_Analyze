@@ -1,0 +1,293 @@
+FUNCTION FC200 : VOID
+TITLE = 'Laptop Communication Handler'
+VERSION : 0.1
+
+VAR_INPUT
+  Enable : BOOL ;                   // Enable communication
+  Reset : BOOL ;                    // Reset communication
+END_VAR
+
+VAR_OUTPUT
+  Status : WORD ;                   // Communication status
+  Error : BOOL ;                    // Error flag
+END_VAR
+
+VAR_TEMP
+  Command : WORD ;                  // Command from laptop
+  TempStatus : WORD ;               // Temporary status
+  TempError : BOOL ;                // Temporary error flag
+END_VAR
+
+BEGIN
+// =============================================================================
+// FUNCTION FC200 - LAPTOP COMMUNICATION HANDLER
+// =============================================================================
+// Description: Handles communication between Laptop and PLC
+// Called from: OB1 Main Program
+// Memory: Uses DB100 for communication buffer
+// =============================================================================
+
+// -----------------------------------------------------------------------
+// INPUT VALIDATION
+// -----------------------------------------------------------------------
+
+// Check if communication is enabled
+      A     #Enable
+      JCN   COMM_DISABLED
+
+// Check for reset command
+      A     #Reset
+      JC    COMM_RESET
+
+// -----------------------------------------------------------------------
+// READ COMMAND FROM LAPTOP
+// -----------------------------------------------------------------------
+
+// Read command word from DB100
+      L     DB100.DBW0              // Load command word
+      T     #Command                // Store in temp variable
+
+// Check if command is valid (not zero)
+      L     #Command
+      L     0
+      ==I
+      JC    COMM_IDLE               // Jump if no command
+
+// -----------------------------------------------------------------------
+// PROCESS COMMAND
+// -----------------------------------------------------------------------
+
+// Decode and execute command
+      L     #Command
+      
+      // Command 0001: Write Coordinate Set
+      L     1
+      ==I
+      JC    CMD_WRITE_COORD
+      
+      // Command 0002: Read Coordinate Set
+      L     2
+      ==I
+      JC    CMD_READ_COORD
+      
+      // Command 0003: Execute Coordinate Set
+      L     3
+      ==I
+      JC    CMD_EXECUTE_COORD
+      
+      // Command 0004: Get Robot Position
+      L     4
+      ==I
+      JC    CMD_GET_POSITION
+      
+      // Command 0005: Emergency Stop
+      L     5
+      ==I
+      JC    CMD_EMERGENCY_STOP
+      
+      // Command 0006: Reset Communication
+      L     6
+      ==I
+      JC    CMD_RESET_COMM
+      
+      // Command 0007: Get System Status
+      L     7
+      ==I
+      JC    CMD_GET_STATUS
+      
+      // Command 00FF: Test Communication
+      L     255
+      ==I
+      JC    CMD_TEST_COMM
+      
+      // Invalid command
+      JU    CMD_INVALID
+
+// -----------------------------------------------------------------------
+// COMMAND HANDLERS
+// -----------------------------------------------------------------------
+
+CMD_WRITE_COORD:
+      // Set status to processing
+      L     1
+      T     DB100.DBW2              // Status: Processing
+      
+      // Call write coordinate function
+      CALL  FC201
+      Enable := TRUE
+      
+      // Update status based on result
+      A     FC201.Error
+      JC    WRITE_ERROR
+      
+      // Success
+      L     2
+      T     DB100.DBW2              // Status: Success
+      JU    CLEAR_CMD
+
+WRITE_ERROR:
+      L     3
+      T     DB100.DBW2              // Status: Failed
+      JU    CLEAR_CMD
+
+CMD_READ_COORD:
+      // Set status to processing
+      L     1
+      T     DB100.DBW2
+      
+      // Call read coordinate function
+      CALL  FC202
+      Enable := TRUE
+      
+      // Update status
+      A     FC202.Error
+      JC    READ_ERROR
+      
+      L     2
+      T     DB100.DBW2              // Status: Success
+      JU    CLEAR_CMD
+
+READ_ERROR:
+      L     3
+      T     DB100.DBW2              // Status: Failed
+      JU    CLEAR_CMD
+
+CMD_EXECUTE_COORD:
+      // Check safety conditions
+      A     M1.1                    // Safety status
+      JCN   SAFETY_ERROR
+      
+      // Set status to processing
+      L     1
+      T     DB100.DBW2
+      
+      // Call execute coordinate function
+      CALL  FC203
+      Enable := TRUE
+      
+      // Update status
+      A     FC203.Error
+      JC    EXECUTE_ERROR
+      
+      L     8
+      T     DB100.DBW2              // Status: Executing
+      JU    CLEAR_CMD
+
+EXECUTE_ERROR:
+      L     4
+      T     DB100.DBW2              // Status: Robot not ready
+      JU    CLEAR_CMD
+
+SAFETY_ERROR:
+      L     5
+      T     DB100.DBW2              // Status: Safety violation
+      JU    CLEAR_CMD
+
+CMD_GET_POSITION:
+      // Set status to processing
+      L     1
+      T     DB100.DBW2
+      
+      // Call get position function
+      CALL  FC204
+      Enable := TRUE
+      
+      // Update status
+      L     2
+      T     DB100.DBW2              // Status: Success
+      JU    CLEAR_CMD
+
+CMD_EMERGENCY_STOP:
+      // Set emergency stop flag
+      S     M1.2                    // Emergency stop from laptop
+      
+      // Update status
+      L     11
+      T     DB100.DBW2              // Status: Emergency mode
+      JU    CLEAR_CMD
+
+CMD_RESET_COMM:
+      // Reset communication flags
+      R     M1.2                    // Clear emergency stop
+      
+      // Clear error flags
+      L     0
+      T     DB100.DBW28             // Clear error code
+      
+      // Update status
+      L     0
+      T     DB100.DBW2              // Status: Ready
+      JU    CLEAR_CMD
+
+CMD_GET_STATUS:
+      // Call system diagnostics
+      CALL  FC205
+      Enable := TRUE
+      
+      // Update status
+      L     2
+      T     DB100.DBW2              // Status: Success
+      JU    CLEAR_CMD
+
+CMD_TEST_COMM:
+      // Test communication response
+      L     65535
+      T     DB100.DBW2              // Status: Test response
+      JU    CLEAR_CMD
+
+CMD_INVALID:
+      // Invalid command error
+      L     3
+      T     DB100.DBW2              // Status: Invalid parameter
+      JU    CLEAR_CMD
+
+// -----------------------------------------------------------------------
+// COMMON OPERATIONS
+// -----------------------------------------------------------------------
+
+CLEAR_CMD:
+      // Clear command word
+      L     0
+      T     DB100.DBW0
+      
+      // Update timestamp
+      CALL  FC8                     // Get system time
+      T     DB100.DBW24             // Store timestamp
+      
+      // Clear temporary error
+      CLR
+      =     #TempError
+      JU    COMM_EXIT
+
+COMM_DISABLED:
+      // Communication disabled
+      L     0
+      T     DB100.DBW2              // Status: Ready
+      JU    COMM_EXIT
+
+COMM_RESET:
+      // Reset all communication data
+      L     0
+      T     DB100.DBW0              // Clear command
+      T     DB100.DBW2              // Clear status
+      T     DB100.DBW28             // Clear error code
+      
+      // Reset flags
+      R     M1.2                    // Clear emergency stop
+      JU    COMM_EXIT
+
+COMM_IDLE:
+      // No command - idle state
+      L     0
+      T     DB100.DBW2              // Status: Ready
+      JU    COMM_EXIT
+
+COMM_EXIT:
+      // Set output parameters
+      L     DB100.DBW2
+      T     #Status
+      
+      A     #TempError
+      =     #Error
+
+END_FUNCTION

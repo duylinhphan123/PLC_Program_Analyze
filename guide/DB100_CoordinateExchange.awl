@@ -1,0 +1,58 @@
+DATA_BLOCK "DB100_CoordinateExchange"
+TITLE = Coordinate Exchange Interface
+VERSION : 0.1
+
+STRUCT 
+   Command_Word : WORD ;                    //Command from Laptop
+   Status_Word : WORD := W#16#1;           //PLC Status
+   Handshake : BOOL ;                      //Handshake bit
+   Data_Valid : BOOL ;                     //Data valid
+   Error_Flag : BOOL ;                     //Error flag
+   Reserved_Bits : BOOL ;                  //Reserved (4.3-4.7)
+   Area_Selection : INT := 1;              //Area selection (1=Area1, 2=Area2)
+   Coordinate_Set : INT := 1;              //Coordinate set (1-10)
+   X_Coordinate : DINT ;                   //X coordinate (mm)
+   Y_Coordinate : DINT ;                   //Y coordinate (mm)
+   Z_Coordinate : DINT := L#500;           //Z coordinate (mm)
+   RX_Rotation : INT ;                     //RX rotation (degrees*100)
+   RY_Rotation : INT ;                     //RY rotation (degrees*100)
+   RZ_Rotation : INT ;                     //RZ rotation (degrees*100)
+   Gripper_Command : INT ;                 //Gripper command
+   Speed_Override : INT := 100;            //Speed override (10-100%)
+   Timestamp : TIME ;                      //Timestamp
+   Error_Code : WORD ;                     //Error code
+   Cycle_Counter : DINT ;                  //Cycle counter
+   Reserved : ARRAY [1 .. 10] OF WORD ;   //Reserved for expansion
+END_STRUCT ;
+
+BEGIN
+   Command_Word := W#16#0; 
+   Status_Word := W#16#1; 
+   Handshake := FALSE; 
+   Data_Valid := FALSE; 
+   Error_Flag := FALSE; 
+   Reserved_Bits := FALSE; 
+   Area_Selection := 1; 
+   Coordinate_Set := 1; 
+   X_Coordinate := L#0; 
+   Y_Coordinate := L#0; 
+   Z_Coordinate := L#500; 
+   RX_Rotation := 0; 
+   RY_Rotation := 0; 
+   RZ_Rotation := 0; 
+   Gripper_Command := 0; 
+   Speed_Override := 100; 
+   Timestamp := T#0MS; 
+   Error_Code := W#16#0; 
+   Cycle_Counter := L#0; 
+   Reserved[1] := W#16#0; 
+   Reserved[2] := W#16#0; 
+   Reserved[3] := W#16#0; 
+   Reserved[4] := W#16#0; 
+   Reserved[5] := W#16#0; 
+   Reserved[6] := W#16#0; 
+   Reserved[7] := W#16#0; 
+   Reserved[8] := W#16#0; 
+   Reserved[9] := W#16#0; 
+   Reserved[10] := W#16#0; 
+END_DATA_BLOCK

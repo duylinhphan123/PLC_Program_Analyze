@@ -1,0 +1,89 @@
+DATA_BLOCK "DB101_RobotBuffer"
+TITLE = Robot Communication Buffer
+VERSION : 0.1
+
+STRUCT 
+   Robot_Command : WORD ;                  //Command to Robot
+   Robot_Status : WORD ;                   //Robot Status
+   Command_Active : BOOL ;                 //Command active
+   Robot_Ready : BOOL ;                    //Robot ready
+   Movement_Complete : BOOL ;              //Movement complete
+   Robot_Error : BOOL ;                    //Robot error
+   Target_X : DINT ;                       //Target X coordinate
+   Target_Y : DINT ;                       //Target Y coordinate
+   Target_Z : DINT := L#500;               //Target Z coordinate
+   Target_RX : INT ;                       //Target RX angle
+   Target_RY : INT ;                       //Target RY angle
+   Target_RZ : INT ;                       //Target RZ angle
+   Current_X : DINT ;                      //Current X coordinate
+   Current_Y : DINT ;                      //Current Y coordinate
+   Current_Z : DINT := L#500;              //Current Z coordinate
+   Current_RX : INT ;                      //Current RX angle
+   Current_RY : INT ;                      //Current RY angle
+   Current_RZ : INT ;                      //Current RZ angle
+   Movement_Speed : INT := 100;            //Movement speed
+   Acceleration : INT := 50;               //Acceleration
+   Gripper_Status : INT ;                  //Gripper status
+   Tool_Number : INT := 1;                 //Tool number
+   Send_Request : BOOL ;                   //Send request
+   Receive_Done : BOOL ;                   //Receive done
+   Timeout_Error : BOOL ;                  //Timeout error
+   Comm_Error : BOOL ;                     //Communication error
+   Send_Timestamp : TIME ;                 //Send timestamp
+   Receive_Timestamp : TIME ;              //Receive timestamp
+   Response_Time : TIME ;                  //Response time
+   Error_Code : WORD ;                     //Error code
+   Error_Count : INT ;                     //Error count
+   Success_Count : DINT ;                  //Success count
+   Reserved : ARRAY [1 .. 15] OF WORD ;   //Reserved for expansion
+END_STRUCT ;
+
+BEGIN
+   Robot_Command := W#16#0;
+   Robot_Status := W#16#0;
+   Command_Active := FALSE;
+   Robot_Ready := FALSE;
+   Movement_Complete := FALSE;
+   Robot_Error := FALSE;
+   Target_X := L#0;
+   Target_Y := L#0;
+   Target_Z := L#500;
+   Target_RX := 0;
+   Target_RY := 0;
+   Target_RZ := 0;
+   Current_X := L#0;
+   Current_Y := L#0;
+   Current_Z := L#500;
+   Current_RX := 0;
+   Current_RY := 0;
+   Current_RZ := 0;
+   Movement_Speed := 100;
+   Acceleration := 50;
+   Gripper_Status := 0;
+   Tool_Number := 1;
+   Send_Request := FALSE;
+   Receive_Done := FALSE;
+   Timeout_Error := FALSE;
+   Comm_Error := FALSE;
+   Send_Timestamp := T#0MS;
+   Receive_Timestamp := T#0MS;
+   Response_Time := T#0MS;
+   Error_Code := W#16#0;
+   Error_Count := 0;
+   Success_Count := L#0;
+   Reserved[1] := W#16#0;
+   Reserved[2] := W#16#0;
+   Reserved[3] := W#16#0;
+   Reserved[4] := W#16#0;
+   Reserved[5] := W#16#0;
+   Reserved[6] := W#16#0;
+   Reserved[7] := W#16#0;
+   Reserved[8] := W#16#0;
+   Reserved[9] := W#16#0;
+   Reserved[10] := W#16#0;
+   Reserved[11] := W#16#0;
+   Reserved[12] := W#16#0;
+   Reserved[13] := W#16#0;
+   Reserved[14] := W#16#0;
+   Reserved[15] := W#16#0;
+END_DATA_BLOCK

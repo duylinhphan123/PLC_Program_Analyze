@@ -1,0 +1,345 @@
+FUNCTION FC50 : VOID
+TITLE = 'Area 1 Main Control Logic'
+VERSION : 0.1
+
+VAR_INPUT
+  Enable : BOOL ;                   // Enable Area 1
+  Reset : BOOL ;                    // Reset Area 1
+  Manual : BOOL ;                   // Manual mode
+END_VAR
+
+VAR_OUTPUT
+  Running : BOOL ;                  // Area 1 running status
+  Error : BOOL ;                    // Error flag
+  Ready : BOOL ;                    // Ready for operation
+END_VAR
+
+VAR_TEMP
+  StepNumber : INT ;                // Current step number
+  ConveyorReady : BOOL ;            // Conveyor ready flag
+  RobotReady : BOOL ;               // Robot ready flag
+  SafetyOK : BOOL ;                 // Safety status
+  CycleComplete : BOOL ;            // Cycle complete flag
+END_VAR
+
+BEGIN
+// =============================================================================
+// FUNCTION FC50 - AREA 1 MAIN CONTROL LOGIC
+// =============================================================================
+// Description: Main control logic for Area 1 palletizing line
+// Called from: OB1 Main Program
+// Memory: Uses DB5, DB6, DB7, DB10 for Area 1 data
+// =============================================================================
+
+// -----------------------------------------------------------------------
+// INPUT VALIDATION AND SAFETY CHECKS
+// -----------------------------------------------------------------------
+
+// Check enable condition
+      A     #Enable
+      A     M12.0                   // Area 1 enable flag
+      =     #Running
+
+// Check safety conditions
+      A     I0.0                    // Emergency stop 1
+      A     I0.4                    // Emergency stop 2
+      A     I65.5                   // Light curtain
+      A     M1.1                    // Overall safety status
+      =     #SafetyOK
+
+// Exit if not enabled or unsafe
+      A     #Running
+      A     #SafetyOK
+      JCN   AREA1_DISABLED
+
+// -----------------------------------------------------------------------
+// CONVEYOR SYSTEM CONTROL
+// -----------------------------------------------------------------------
+
+// Check conveyor sensors
+      A     I1.0                    // Conveyor sensor 1
+      A     I1.1                    // Conveyor sensor 2
+      A     I1.2                    // Conveyor sensor 3
+      =     #ConveyorReady
+
+// Conveyor motor control
+      A     #ConveyorReady
+      A     #SafetyOK
+      A     DB10.DBX0.0             // Conveyor enable from HMI
+      =     Q32.0                   // Conveyor motor
+
+// Conveyor speed control
+      A     Q32.0                   // Conveyor running
+      JCN   CONV_STOPPED
+
+      // Load speed setpoint
+      L     DB10.DBW10              // Conveyor speed setpoint
+      T     QW34                    // Analog output for speed
+
+CONV_STOPPED:
+      L     0
+      T     QW34                    // Stop conveyor
+
+// -----------------------------------------------------------------------
+// ROBOT READY CHECK
+// -----------------------------------------------------------------------
+
+// Check robot status inputs
+      A     I4.0                    // Robot power on
+      A     I4.1                    // Robot auto mode
+      A     I4.2                    // Robot ready
+      AN    I4.3                    // Robot error (inverted)
+      =     #RobotReady
+
+// Robot enable output
+      A     #RobotReady
+      A     #SafetyOK
+      =     Q36.0                   // Robot enable
+
+// -----------------------------------------------------------------------
+// MAIN SEQUENCE CONTROL
+// -----------------------------------------------------------------------
+
+// Load current step number
+      L     DB10.DBW100             // Current step
+      T     #StepNumber
+
+// Step sequence
+      L     #StepNumber
+      
+      // Step 0: Initialize
+      L     0
+      ==I
+      JC    STEP_INIT
+      
+      // Step 1: Wait for product
+      L     1
+      ==I
+      JC    STEP_WAIT_PRODUCT
+      
+      // Step 2: Pick product
+      L     2
+      ==I
+      JC    STEP_PICK_PRODUCT
+      
+      // Step 3: Move to pallet
+      L     3
+      ==I
+      JC    STEP_MOVE_PALLET
+      
+      // Step 4: Place product
+      L     4
+      ==I
+      JC    STEP_PLACE_PRODUCT
+      
+      // Step 5: Return to home
+      L     5
+      ==I
+      JC    STEP_RETURN_HOME
+      
+      // Step 6: Check pallet full
+      L     6
+      ==I
+      JC    STEP_CHECK_PALLET
+      
+      // Default: Error
+      JU    STEP_ERROR
+
+// -----------------------------------------------------------------------
+// STEP IMPLEMENTATIONS
+// -----------------------------------------------------------------------
+
+STEP_INIT:
+      // Initialize system
+      L     0
+      T     DB10.DBW102             // Clear error code
+      
+      // Check if ready to start
+      A     #ConveyorReady
+      A     #RobotReady
+      A     #SafetyOK
+      JCN   INIT_WAIT
+      
+      // Move to next step
+      L     1
+      T     DB10.DBW100
+      JU    STEP_EXIT
+
+INIT_WAIT:
+      // Wait for ready conditions
+      JU    STEP_EXIT
+
+STEP_WAIT_PRODUCT:
+      // Wait for product detection
+      A     I1.3                    // Product sensor
+      JCN   STEP_EXIT
+      
+      // Product detected, move to pick
+      L     2
+      T     DB10.DBW100
+      JU    STEP_EXIT
+
+STEP_PICK_PRODUCT:
+      // Send pick command to robot
+      S     Q36.1                   // Pick command
+      
+      // Wait for robot completion
+      A     I4.4                    // Robot cycle complete
+      JCN   STEP_EXIT
+      
+      // Reset pick command
+      R     Q36.1
+      
+      // Move to next step
+      L     3
+      T     DB10.DBW100
+      JU    STEP_EXIT
+
+STEP_MOVE_PALLET:
+      // Send move to pallet command
+      S     Q36.2                   // Move to pallet
+      
+      // Wait for position reached
+      A     I4.5                    // Position reached
+      JCN   STEP_EXIT
+      
+      // Reset move command
+      R     Q36.2
+      
+      // Move to next step
+      L     4
+      T     DB10.DBW100
+      JU    STEP_EXIT
+
+STEP_PLACE_PRODUCT:
+      // Send place command to robot
+      S     Q36.3                   // Place command
+      
+      // Wait for robot completion
+      A     I4.4                    // Robot cycle complete
+      JCN   STEP_EXIT
+      
+      // Reset place command
+      R     Q36.3
+      
+      // Increment product counter
+      L     DB10.DBW200
+      L     1
+      +I
+      T     DB10.DBW200
+      
+      // Move to next step
+      L     5
+      T     DB10.DBW100
+      JU    STEP_EXIT
+
+STEP_RETURN_HOME:
+      // Send return home command
+      S     Q36.4                   // Return home
+      
+      // Wait for home position
+      A     I4.6                    // Home position reached
+      JCN   STEP_EXIT
+      
+      // Reset home command
+      R     Q36.4
+      
+      // Move to next step
+      L     6
+      T     DB10.DBW100
+      JU    STEP_EXIT
+
+STEP_CHECK_PALLET:
+      // Check if pallet is full
+      L     DB10.DBW200             // Product counter
+      L     DB10.DBW202             // Products per pallet
+      >=I
+      JC    PALLET_FULL
+      
+      // Pallet not full, continue
+      L     1
+      T     DB10.DBW100             // Back to wait for product
+      JU    STEP_EXIT
+
+PALLET_FULL:
+      // Pallet full, signal for change
+      S     Q37.0                   // Pallet full signal
+      
+      // Reset product counter
+      L     0
+      T     DB10.DBW200
+      
+      // Wait for pallet change
+      A     I5.0                    // New pallet ready
+      JCN   STEP_EXIT
+      
+      // Reset pallet full signal
+      R     Q37.0
+      
+      // Continue with new pallet
+      L     1
+      T     DB10.DBW100
+      JU    STEP_EXIT
+
+STEP_ERROR:
+      // Error condition
+      L     100
+      T     DB10.DBW102             // Error code: Step error
+      
+      // Stop all outputs
+      R     Q32.0                   // Stop conveyor
+      R     Q36.0                   // Disable robot
+      
+      // Set error flag
+      S     #Error
+      JU    STEP_EXIT
+
+// -----------------------------------------------------------------------
+// RESET HANDLING
+// -----------------------------------------------------------------------
+
+AREA1_DISABLED:
+      // Area 1 disabled or unsafe
+      R     #Running
+      R     #Ready
+      
+      // Stop all outputs
+      R     Q32.0                   // Stop conveyor
+      R     Q36.0                   // Disable robot
+      
+      // Check for reset
+      A     #Reset
+      JCN   STEP_EXIT
+      
+      // Reset sequence
+      L     0
+      T     DB10.DBW100             // Reset step
+      T     DB10.DBW102             // Clear error
+      
+      // Clear error flag
+      R     #Error
+      JU    STEP_EXIT
+
+// -----------------------------------------------------------------------
+// OUTPUT ASSIGNMENTS
+// -----------------------------------------------------------------------
+
+STEP_EXIT:
+      // Set ready flag
+      A     #SafetyOK
+      A     #ConveyorReady
+      A     #RobotReady
+      AN    #Error
+      =     #Ready
+      
+      // Status outputs
+      A     #Running
+      =     Q65.0                   // Area 1 running lamp
+      
+      A     #Ready
+      =     Q65.1                   // Area 1 ready lamp
+      
+      A     #Error
+      =     Q65.2                   // Area 1 error lamp
+
+END_FUNCTION

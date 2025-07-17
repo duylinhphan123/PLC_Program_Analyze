@@ -1,0 +1,151 @@
+ORGANIZATION_BLOCK OB1
+TITLE = 'Main Program - Cyclic Execution'
+VERSION : 0.1
+
+VAR_TEMP
+  OB1_EV_CLASS : BYTE ;         // Event class
+  OB1_SCAN_1 : BYTE ;           // Scan cycle counter 1
+  OB1_PRIORITY : BYTE ;         // Priority
+  OB1_OB_NUMBR : BYTE ;         // OB number
+  OB1_RESERVED_1 : BYTE ;       // Reserved
+  OB1_RESERVED_2 : BYTE ;       // Reserved
+  OB1_PREV_CYCLE : INT ;        // Previous cycle time
+  OB1_MIN_CYCLE : INT ;         // Minimum cycle time
+  OB1_MAX_CYCLE : INT ;         // Maximum cycle time
+  OB1_DATE_TIME : DATE_AND_TIME ; // Date and time
+END_VAR
+
+BEGIN
+// =============================================================================
+// ORGANIZATION BLOCK OB1 - MAIN PROGRAM
+// =============================================================================
+// Description: Main cyclic program for S7-400H Palletizing System
+// Author: PLC Analysis Project
+// Date: 17/07/2025
+// =============================================================================
+
+// -----------------------------------------------------------------------
+// SYSTEM INITIALIZATION AND SAFETY CHECKS
+// -----------------------------------------------------------------------
+
+// Check system startup flags
+      A     M0.0                    // System startup flag
+      JC    INIT                    // Jump to initialization if first cycle
+
+// Emergency stop monitoring
+      A     I0.0                    // Emergency stop circuit 1
+      A     I0.4                    // Emergency stop circuit 2
+      =     M1.0                    // Emergency stop status
+
+// Safety validation
+      A     M1.0                    // Emergency stop OK
+      A     I65.5                   // Light curtain status
+      =     M1.1                    // Overall safety status
+
+// -----------------------------------------------------------------------
+// AREA 1 CONTROL LOGIC
+// -----------------------------------------------------------------------
+
+// Check if Area 1 is enabled
+      A     M12.0                   // Area 1 enable flag
+      A     M1.1                    // Safety status OK
+      JCN   AREA1_SKIP
+
+// Call Area 1 functions
+      CALL  FC50                    // Area 1 main control
+      CALL  FC51                    // Area 1 I/O processing
+      CALL  FC52                    // Area 1 robot communication
+      CALL  FC53                    // Area 1 position control
+      CALL  FC54                    // Area 1 safety interlocks
+      CALL  FC55                    // Area 1 data logging
+
+AREA1_SKIP:
+
+// -----------------------------------------------------------------------
+// AREA 2 CONTROL LOGIC
+// -----------------------------------------------------------------------
+
+// Check if Area 2 is enabled
+      A     M62.0                   // Area 2 enable flag
+      A     M1.1                    // Safety status OK
+      JCN   AREA2_SKIP
+
+// Call Area 2 functions
+      CALL  FC60                    // Area 2 main control
+      CALL  FC61                    // Area 2 I/O processing
+      CALL  FC62                    // Area 2 robot communication
+      CALL  FC63                    // Area 2 position control
+      CALL  FC64                    // Area 2 safety interlocks
+      CALL  FC65                    // Area 2 data logging
+
+AREA2_SKIP:
+
+// -----------------------------------------------------------------------
+// COORDINATE EXCHANGE SYSTEM
+// -----------------------------------------------------------------------
+
+// Call coordinate exchange functions
+      CALL  FC200                   // Laptop communication handler
+      CALL  FC201                   // Write coordinate set
+      CALL  FC202                   // Read coordinate set
+      CALL  FC203                   // Execute coordinate set
+      CALL  FC204                   // Get robot position
+      CALL  FC205                   // System diagnostics
+
+// -----------------------------------------------------------------------
+// SYSTEM DIAGNOSTICS AND MONITORING
+// -----------------------------------------------------------------------
+
+// Update system diagnostics
+      CALL  FC102                   // Area 1 diagnostics
+      CALL  FC112                   // Area 2 diagnostics
+
+// Recipe management
+      CALL  FC103                   // Area 1 recipe management
+      CALL  FC113                   // Area 2 recipe management
+
+// -----------------------------------------------------------------------
+// WATCHDOG AND CYCLE TIME MONITORING
+// -----------------------------------------------------------------------
+
+// Update cycle time monitoring
+      L     OB1_PREV_CYCLE
+      T     MW100                   // Store previous cycle time
+      
+      L     OB1_MAX_CYCLE
+      T     MW102                   // Store maximum cycle time
+
+// System heartbeat
+      A     M0.1                    // Heartbeat bit
+      NOT
+      =     M0.1                    // Toggle heartbeat
+
+// End of main program
+      BEU
+
+// -----------------------------------------------------------------------
+// INITIALIZATION ROUTINE
+// -----------------------------------------------------------------------
+
+INIT:
+      // Clear startup flag
+      R     M0.0
+      
+      // Initialize system variables
+      L     0
+      T     MW100                   // Clear cycle time
+      T     MW102                   // Clear max cycle time
+      
+      // Set initial states
+      S     M12.0                   // Enable Area 1
+      S     M62.0                   // Enable Area 2
+      
+      // Initialize Data Blocks
+      CALL  SFC20                   // Block move
+      SRCBLK:= P#DB100.DBX0.0       // Source: DB100
+      DSTBLK:= P#DB101.DBX0.0       // Destination: DB101
+      LENGTH:= 50                   // 50 bytes
+      
+      BEU
+
+END_ORGANIZATION_BLOCK

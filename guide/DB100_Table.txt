@@ -1,0 +1,29 @@
+Command_Word	WORD	0	W#16#0	Command from Laptop
+Status_Word	WORD	2	W#16#1	PLC Status
+Handshake	BOOL	4.0	FALSE	Handshake bit
+Data_Valid	BOOL	4.1	FALSE	Data valid
+Error_Flag	BOOL	4.2	FALSE	Error flag
+Reserved_Bits	BOOL	4.3	FALSE	Reserved (4.3-4.7)
+Area_Selection	INT	6	1	Area selection (1=Area1, 2=Area2)
+Coordinate_Set	INT	8	1	Coordinate set (1-10)
+X_Coordinate	DINT	10	L#0	X coordinate (mm)
+Y_Coordinate	DINT	14	L#0	Y coordinate (mm)
+Z_Coordinate	DINT	18	L#500	Z coordinate (mm)
+RX_Rotation	INT	22	0	RX rotation (degrees*100)
+RY_Rotation	INT	24	0	RY rotation (degrees*100)
+RZ_Rotation	INT	26	0	RZ rotation (degrees*100)
+Gripper_Command	INT	28	0	Gripper command
+Speed_Override	INT	30	100	Speed override (10-100%)
+Timestamp	TIME	32	T#0MS	Timestamp
+Error_Code	WORD	36	W#16#0	Error code
+Cycle_Counter	DINT	38	L#0	Cycle counter
+Reserved_1	WORD	42	W#16#0	Reserved for expansion
+Reserved_2	WORD	44	W#16#0	Reserved for expansion
+Reserved_3	WORD	46	W#16#0	Reserved for expansion
+Reserved_4	WORD	48	W#16#0	Reserved for expansion
+Reserved_5	WORD	50	W#16#0	Reserved for expansion
+Reserved_6	WORD	52	W#16#0	Reserved for expansion
+Reserved_7	WORD	54	W#16#0	Reserved for expansion
+Reserved_8	WORD	56	W#16#0	Reserved for expansion
+Reserved_9	WORD	58	W#16#0	Reserved for expansion
+Reserved_10	WORD	60	W#16#0	Reserved for expansion

@@ -1,0 +1,300 @@
+DATA_BLOCK "DB100_CoordinateExchange"
+TITLE = "Coordinate Exchange Interface"
+VERSION : 0.1
+AUTHOR : System_Engineer
+NAME : DB100_CoordinateExchange
+
+STRUCT 
+   Command_Word : WORD ;                    //Command from Laptop
+   Status_Word : WORD := W#16#1;           //PLC Status
+   Handshake : BOOL ;                      //Handshake bit
+   Data_Valid : BOOL ;                     //Data valid
+   Error_Flag : BOOL ;                     //Error flag
+   Reserved_Bits : BOOL ;                  //Reserved (4.3-4.7)
+   Area_Selection : INT := 1;              //Area selection (1=Area1, 2=Area2)
+   Coordinate_Set : INT := 1;              //Coordinate set (1-10)
+   X_Coordinate : DINT ;                   //X coordinate (mm)
+   Y_Coordinate : DINT ;                   //Y coordinate (mm)
+   Z_Coordinate : DINT := L#500;           //Z coordinate (mm)
+   RX_Rotation : INT ;                     //RX rotation (degrees*100)
+   RY_Rotation : INT ;                     //RY rotation (degrees*100)
+   RZ_Rotation : INT ;                     //RZ rotation (degrees*100)
+   Gripper_Command : INT ;                 //Gripper command
+   Speed_Override : INT := 100;            //Speed override (10-100%)
+   Timestamp : TIME ;                      //Timestamp
+   Error_Code : WORD ;                     //Error code
+   Cycle_Counter : DINT ;                  //Cycle counter
+   Reserved : ARRAY [1 .. 10] OF WORD ;   //Reserved for expansion
+END_STRUCT ;
+
+BEGIN
+   Command_Word := W#16#0; 
+   Status_Word := W#16#1; 
+   Handshake := FALSE; 
+   Data_Valid := FALSE; 
+   Error_Flag := FALSE; 
+   Reserved_Bits := FALSE; 
+   Area_Selection := 1; 
+   Coordinate_Set := 1; 
+   X_Coordinate := L#0; 
+   Y_Coordinate := L#0; 
+   Z_Coordinate := L#500; 
+   RX_Rotation := 0; 
+   RY_Rotation := 0; 
+   RZ_Rotation := 0; 
+   Gripper_Command := 0; 
+   Speed_Override := 100; 
+   Timestamp := T#0MS; 
+   Error_Code := W#16#0; 
+   Cycle_Counter := L#0; 
+   Reserved[1] := W#16#0; 
+   Reserved[2] := W#16#0; 
+   Reserved[3] := W#16#0; 
+   Reserved[4] := W#16#0; 
+   Reserved[5] := W#16#0; 
+   Reserved[6] := W#16#0; 
+   Reserved[7] := W#16#0; 
+   Reserved[8] := W#16#0; 
+   Reserved[9] := W#16#0; 
+   Reserved[10] := W#16#0; 
+END_DATA_BLOCK
+
+DATA_BLOCK "DB101_RobotBuffer"
+TITLE = "Robot Communication Buffer"
+VERSION : 0.1
+AUTHOR : System_Engineer
+NAME : DB101_RobotBuffer
+
+STRUCT 
+   Robot_Command : WORD ;                  //Command to Robot
+   Robot_Status : WORD ;                   //Robot Status
+   Command_Active : BOOL ;                 //Command active
+   Robot_Ready : BOOL ;                    //Robot ready
+   Movement_Complete : BOOL ;              //Movement complete
+   Robot_Error : BOOL ;                    //Robot error
+   Target_X : DINT ;                       //Target X coordinate
+   Target_Y : DINT ;                       //Target Y coordinate
+   Target_Z : DINT := L#500;               //Target Z coordinate
+   Target_RX : INT ;                       //Target RX angle
+   Target_RY : INT ;                       //Target RY angle
+   Target_RZ : INT ;                       //Target RZ angle
+   Current_X : DINT ;                      //Current X coordinate
+   Current_Y : DINT ;                      //Current Y coordinate
+   Current_Z : DINT := L#500;              //Current Z coordinate
+   Current_RX : INT ;                      //Current RX angle
+   Current_RY : INT ;                      //Current RY angle
+   Current_RZ : INT ;                      //Current RZ angle
+   Movement_Speed : INT := 100;            //Movement speed
+   Acceleration : INT := 50;               //Acceleration
+   Gripper_Status : INT ;                  //Gripper status
+   Tool_Number : INT := 1;                 //Tool number
+   Send_Request : BOOL ;                   //Send request
+   Receive_Done : BOOL ;                   //Receive done
+   Timeout_Error : BOOL ;                  //Timeout error
+   Comm_Error : BOOL ;                     //Communication error
+   Send_Timestamp : TIME ;                 //Send timestamp
+   Receive_Timestamp : TIME ;              //Receive timestamp
+   Response_Time : TIME ;                  //Response time
+   Error_Code : WORD ;                     //Error code
+   Error_Count : INT ;                     //Error count
+   Success_Count : DINT ;                  //Success count
+   Reserved : ARRAY [1 .. 15] OF WORD ;   //Reserved for expansion
+END_STRUCT ;
+
+BEGIN
+   Robot_Command := W#16#0;
+   Robot_Status := W#16#0;
+   Command_Active := FALSE;
+   Robot_Ready := FALSE;
+   Movement_Complete := FALSE;
+   Robot_Error := FALSE;
+   Target_X := L#0;
+   Target_Y := L#0;
+   Target_Z := L#500;
+   Target_RX := 0;
+   Target_RY := 0;
+   Target_RZ := 0;
+   Current_X := L#0;
+   Current_Y := L#0;
+   Current_Z := L#500;
+   Current_RX := 0;
+   Current_RY := 0;
+   Current_RZ := 0;
+   Movement_Speed := 100;
+   Acceleration := 50;
+   Gripper_Status := 0;
+   Tool_Number := 1;
+   Send_Request := FALSE;
+   Receive_Done := FALSE;
+   Timeout_Error := FALSE;
+   Comm_Error := FALSE;
+   Send_Timestamp := T#0MS;
+   Receive_Timestamp := T#0MS;
+   Response_Time := T#0MS;
+   Error_Code := W#16#0;
+   Error_Count := 0;
+   Success_Count := L#0;
+   Reserved[1] := W#16#0;
+   Reserved[2] := W#16#0;
+   Reserved[3] := W#16#0;
+   Reserved[4] := W#16#0;
+   Reserved[5] := W#16#0;
+   Reserved[6] := W#16#0;
+   Reserved[7] := W#16#0;
+   Reserved[8] := W#16#0;
+   Reserved[9] := W#16#0;
+   Reserved[10] := W#16#0;
+   Reserved[11] := W#16#0;
+   Reserved[12] := W#16#0;
+   Reserved[13] := W#16#0;
+   Reserved[14] := W#16#0;
+   Reserved[15] := W#16#0;
+END_DATA_BLOCK
+
+DATA_BLOCK "DB102_SystemDiagnostics"
+TITLE = "System Status & Diagnostics"
+VERSION : 0.1
+AUTHOR : System_Engineer
+NAME : DB102_SystemDiagnostics
+
+STRUCT 
+   System_Mode : INT := 1;                           //System mode
+   PLC_Status : WORD := W#16#1;                     //PLC status
+   Communication_Status : WORD := W#16#1;           //Communication status
+   Overall_Health : INT := 100;                     //Overall health (%)
+   Cycle_Time_Current : TIME := T#50MS;             //Current cycle time
+   Cycle_Time_Max : TIME := T#100MS;                //Maximum cycle time
+   Cycle_Time_Min : TIME := T#30MS;                 //Minimum cycle time
+   Cycle_Time_Average : TIME := T#50MS;             //Average cycle time
+   Messages_Sent : DINT ;                           //Messages sent count
+   Messages_Received : DINT ;                       //Messages received count
+   Communication_Errors : INT ;                     //Communication errors count
+   Timeout_Count : INT ;                            //Timeout count
+   Robot_Movements : DINT ;                         //Robot movements count
+   Robot_Errors : INT ;                             //Robot errors count
+   Average_Movement_Time : TIME := T#2S;            //Average movement time
+   Last_Error_Code : WORD ;                         //Last error code
+   Last_Error_Time : TIME ;                         //Last error time
+   Error_History_1_Code : WORD ;                    //Error history 1 - Error code
+   Error_History_1_Time : TIME ;                    //Error history 1 - Time
+   Error_History_1_Count : INT ;                    //Error history 1 - Count
+   Error_History_2_Code : WORD ;                    //Error history 2 - Error code
+   Error_History_2_Time : TIME ;                    //Error history 2 - Time
+   Error_History_2_Count : INT ;                    //Error history 2 - Count
+   Error_History_3_Code : WORD ;                    //Error history 3 - Error code
+   Error_History_3_Time : TIME ;                    //Error history 3 - Time
+   Error_History_3_Count : INT ;                    //Error history 3 - Count
+   Error_History_4_Code : WORD ;                    //Error history 4 - Error code
+   Error_History_4_Time : TIME ;                    //Error history 4 - Time
+   Error_History_4_Count : INT ;                    //Error history 4 - Count
+   Error_History_5_Code : WORD ;                    //Error history 5 - Error code
+   Error_History_5_Time : TIME ;                    //Error history 5 - Time
+   Error_History_5_Count : INT ;                    //Error history 5 - Count
+   Error_History_6_Code : WORD ;                    //Error history 6 - Error code
+   Error_History_6_Time : TIME ;                    //Error history 6 - Time
+   Error_History_6_Count : INT ;                    //Error history 6 - Count
+   Error_History_7_Code : WORD ;                    //Error history 7 - Error code
+   Error_History_7_Time : TIME ;                    //Error history 7 - Time
+   Error_History_7_Count : INT ;                    //Error history 7 - Count
+   Error_History_8_Code : WORD ;                    //Error history 8 - Error code
+   Error_History_8_Time : TIME ;                    //Error history 8 - Time
+   Error_History_8_Count : INT ;                    //Error history 8 - Count
+   Error_History_9_Code : WORD ;                    //Error history 9 - Error code
+   Error_History_9_Time : TIME ;                    //Error history 9 - Time
+   Error_History_9_Count : INT ;                    //Error history 9 - Count
+   Error_History_10_Code : WORD ;                   //Error history 10 - Error code
+   Error_History_10_Time : TIME ;                   //Error history 10 - Time
+   Error_History_10_Count : INT ;                   //Error history 10 - Count
+   Memory_Usage : INT := 45;                        //Memory usage (%)
+   CPU_Load : INT := 30;                            //CPU load (%)
+   Temperature : INT := 55;                         //Temperature (°C)
+   Voltage : INT := 240;                            //Voltage (V*10)
+   Operating_Hours : TIME ;                         //Operating hours
+   Maintenance_Due : BOOL ;                         //Maintenance due
+   Calibration_Due : BOOL ;                         //Calibration due
+   Backup_Required : BOOL ;                         //Backup required
+   Reserved : ARRAY [1 .. 25] OF WORD ;            //Reserved for expansion
+END_STRUCT ;
+
+BEGIN
+   System_Mode := 1;
+   PLC_Status := W#16#1;
+   Communication_Status := W#16#1;
+   Overall_Health := 100;
+   Cycle_Time_Current := T#50MS;
+   Cycle_Time_Max := T#100MS;
+   Cycle_Time_Min := T#30MS;
+   Cycle_Time_Average := T#50MS;
+   Messages_Sent := L#0;
+   Messages_Received := L#0;
+   Communication_Errors := 0;
+   Timeout_Count := 0;
+   Robot_Movements := L#0;
+   Robot_Errors := 0;
+   Average_Movement_Time := T#2S;
+   Last_Error_Code := W#16#0;
+   Last_Error_Time := T#0MS;
+   Error_History_1_Code := W#16#0;
+   Error_History_1_Time := T#0MS;
+   Error_History_1_Count := 0;
+   Error_History_2_Code := W#16#0;
+   Error_History_2_Time := T#0MS;
+   Error_History_2_Count := 0;
+   Error_History_3_Code := W#16#0;
+   Error_History_3_Time := T#0MS;
+   Error_History_3_Count := 0;
+   Error_History_4_Code := W#16#0;
+   Error_History_4_Time := T#0MS;
+   Error_History_4_Count := 0;
+   Error_History_5_Code := W#16#0;
+   Error_History_5_Time := T#0MS;
+   Error_History_5_Count := 0;
+   Error_History_6_Code := W#16#0;
+   Error_History_6_Time := T#0MS;
+   Error_History_6_Count := 0;
+   Error_History_7_Code := W#16#0;
+   Error_History_7_Time := T#0MS;
+   Error_History_7_Count := 0;
+   Error_History_8_Code := W#16#0;
+   Error_History_8_Time := T#0MS;
+   Error_History_8_Count := 0;
+   Error_History_9_Code := W#16#0;
+   Error_History_9_Time := T#0MS;
+   Error_History_9_Count := 0;
+   Error_History_10_Code := W#16#0;
+   Error_History_10_Time := T#0MS;
+   Error_History_10_Count := 0;
+   Memory_Usage := 45;
+   CPU_Load := 30;
+   Temperature := 55;
+   Voltage := 240;
+   Operating_Hours := T#0MS;
+   Maintenance_Due := FALSE;
+   Calibration_Due := FALSE;
+   Backup_Required := FALSE;
+   Reserved[1] := W#16#0;
+   Reserved[2] := W#16#0;
+   Reserved[3] := W#16#0;
+   Reserved[4] := W#16#0;
+   Reserved[5] := W#16#0;
+   Reserved[6] := W#16#0;
+   Reserved[7] := W#16#0;
+   Reserved[8] := W#16#0;
+   Reserved[9] := W#16#0;
+   Reserved[10] := W#16#0;
+   Reserved[11] := W#16#0;
+   Reserved[12] := W#16#0;
+   Reserved[13] := W#16#0;
+   Reserved[14] := W#16#0;
+   Reserved[15] := W#16#0;
+   Reserved[16] := W#16#0;
+   Reserved[17] := W#16#0;
+   Reserved[18] := W#16#0;
+   Reserved[19] := W#16#0;
+   Reserved[20] := W#16#0;
+   Reserved[21] := W#16#0;
+   Reserved[22] := W#16#0;
+   Reserved[23] := W#16#0;
+   Reserved[24] := W#16#0;
+   Reserved[25] := W#16#0;
+END_DATA_BLOCK

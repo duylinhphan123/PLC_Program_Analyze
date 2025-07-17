@@ -1,0 +1,80 @@
+System_Mode	INT	0	1	System mode
+PLC_Status	WORD	2	W#16#1	PLC status
+Communication_Status	WORD	4	W#16#1	Communication status
+Overall_Health	INT	6	100	Overall health (%)
+Cycle_Time_Current	TIME	8	T#50MS	Current cycle time
+Cycle_Time_Max	TIME	12	T#100MS	Maximum cycle time
+Cycle_Time_Min	TIME	16	T#30MS	Minimum cycle time
+Cycle_Time_Average	TIME	20	T#50MS	Average cycle time
+Messages_Sent	DINT	24	L#0	Messages sent count
+Messages_Received	DINT	28	L#0	Messages received count
+Communication_Errors	INT	32	0	Communication errors count
+Timeout_Count	INT	34	0	Timeout count
+Robot_Movements	DINT	36	L#0	Robot movements count
+Robot_Errors	INT	40	0	Robot errors count
+Average_Movement_Time	TIME	42	T#2S	Average movement time
+Last_Error_Code	WORD	46	W#16#0	Last error code
+Last_Error_Time	TIME	48	T#0MS	Last error time
+Error_History_1_Code	WORD	52	W#16#0	Error history 1 - Error code
+Error_History_1_Time	TIME	54	T#0MS	Error history 1 - Time
+Error_History_1_Count	INT	58	0	Error history 1 - Count
+Error_History_2_Code	WORD	60	W#16#0	Error history 2 - Error code
+Error_History_2_Time	TIME	62	T#0MS	Error history 2 - Time
+Error_History_2_Count	INT	66	0	Error history 2 - Count
+Error_History_3_Code	WORD	68	W#16#0	Error history 3 - Error code
+Error_History_3_Time	TIME	70	T#0MS	Error history 3 - Time
+Error_History_3_Count	INT	74	0	Error history 3 - Count
+Error_History_4_Code	WORD	76	W#16#0	Error history 4 - Error code
+Error_History_4_Time	TIME	78	T#0MS	Error history 4 - Time
+Error_History_4_Count	INT	82	0	Error history 4 - Count
+Error_History_5_Code	WORD	84	W#16#0	Error history 5 - Error code
+Error_History_5_Time	TIME	86	T#0MS	Error history 5 - Time
+Error_History_5_Count	INT	90	0	Error history 5 - Count
+Error_History_6_Code	WORD	92	W#16#0	Error history 6 - Error code
+Error_History_6_Time	TIME	94	T#0MS	Error history 6 - Time
+Error_History_6_Count	INT	98	0	Error history 6 - Count
+Error_History_7_Code	WORD	100	W#16#0	Error history 7 - Error code
+Error_History_7_Time	TIME	102	T#0MS	Error history 7 - Time
+Error_History_7_Count	INT	106	0	Error history 7 - Count
+Error_History_8_Code	WORD	108	W#16#0	Error history 8 - Error code
+Error_History_8_Time	TIME	110	T#0MS	Error history 8 - Time
+Error_History_8_Count	INT	114	0	Error history 8 - Count
+Error_History_9_Code	WORD	116	W#16#0	Error history 9 - Error code
+Error_History_9_Time	TIME	118	T#0MS	Error history 9 - Time
+Error_History_9_Count	INT	122	0	Error history 9 - Count
+Error_History_10_Code	WORD	124	W#16#0	Error history 10 - Error code
+Error_History_10_Time	TIME	126	T#0MS	Error history 10 - Time
+Error_History_10_Count	INT	130	0	Error history 10 - Count
+Memory_Usage	INT	132	45	Memory usage (%)
+CPU_Load	INT	134	30	CPU load (%)
+Temperature	INT	136	55	Temperature (°C)
+Voltage	INT	138	240	Voltage (V*10)
+Operating_Hours	TIME	140	T#0MS	Operating hours
+Maintenance_Due	BOOL	144.0	FALSE	Maintenance due
+Calibration_Due	BOOL	144.1	FALSE	Calibration due
+Backup_Required	BOOL	144.2	FALSE	Backup required
+Reserved_1	WORD	146	W#16#0	Reserved for expansion
+Reserved_2	WORD	148	W#16#0	Reserved for expansion
+Reserved_3	WORD	150	W#16#0	Reserved for expansion
+Reserved_4	WORD	152	W#16#0	Reserved for expansion
+Reserved_5	WORD	154	W#16#0	Reserved for expansion
+Reserved_6	WORD	156	W#16#0	Reserved for expansion
+Reserved_7	WORD	158	W#16#0	Reserved for expansion
+Reserved_8	WORD	160	W#16#0	Reserved for expansion
+Reserved_9	WORD	162	W#16#0	Reserved for expansion
+Reserved_10	WORD	164	W#16#0	Reserved for expansion
+Reserved_11	WORD	166	W#16#0	Reserved for expansion
+Reserved_12	WORD	168	W#16#0	Reserved for expansion
+Reserved_13	WORD	170	W#16#0	Reserved for expansion
+Reserved_14	WORD	172	W#16#0	Reserved for expansion
+Reserved_15	WORD	174	W#16#0	Reserved for expansion
+Reserved_16	WORD	176	W#16#0	Reserved for expansion
+Reserved_17	WORD	178	W#16#0	Reserved for expansion
+Reserved_18	WORD	180	W#16#0	Reserved for expansion
+Reserved_19	WORD	182	W#16#0	Reserved for expansion
+Reserved_20	WORD	184	W#16#0	Reserved for expansion
+Reserved_21	WORD	186	W#16#0	Reserved for expansion
+Reserved_22	WORD	188	W#16#0	Reserved for expansion
+Reserved_23	WORD	190	W#16#0	Reserved for expansion
+Reserved_24	WORD	192	W#16#0	Reserved for expansion
+Reserved_25	WORD	194	W#16#0	Reserved for expansion

@@ -1,0 +1,47 @@
+Robot_Command	WORD	0	W#16#0	Command to Robot
+Robot_Status	WORD	2	W#16#0	Robot Status
+Command_Active	BOOL	4.0	FALSE	Command active
+Robot_Ready	BOOL	4.1	FALSE	Robot ready
+Movement_Complete	BOOL	4.2	FALSE	Movement complete
+Robot_Error	BOOL	4.3	FALSE	Robot error
+Target_X	DINT	6	L#0	Target X coordinate
+Target_Y	DINT	10	L#0	Target Y coordinate
+Target_Z	DINT	14	L#500	Target Z coordinate
+Target_RX	INT	18	0	Target RX angle
+Target_RY	INT	20	0	Target RY angle
+Target_RZ	INT	22	0	Target RZ angle
+Current_X	DINT	24	L#0	Current X coordinate
+Current_Y	DINT	28	L#0	Current Y coordinate
+Current_Z	DINT	32	L#500	Current Z coordinate
+Current_RX	INT	36	0	Current RX angle
+Current_RY	INT	38	0	Current RY angle
+Current_RZ	INT	40	0	Current RZ angle
+Movement_Speed	INT	42	100	Movement speed
+Acceleration	INT	44	50	Acceleration
+Gripper_Status	INT	46	0	Gripper status
+Tool_Number	INT	48	1	Tool number
+Send_Request	BOOL	50.0	FALSE	Send request
+Receive_Done	BOOL	50.1	FALSE	Receive done
+Timeout_Error	BOOL	50.2	FALSE	Timeout error
+Comm_Error	BOOL	50.3	FALSE	Communication error
+Send_Timestamp	TIME	52	T#0MS	Send timestamp
+Receive_Timestamp	TIME	56	T#0MS	Receive timestamp
+Response_Time	TIME	60	T#0MS	Response time
+Error_Code	WORD	64	W#16#0	Error code
+Error_Count	INT	66	0	Error count
+Success_Count	DINT	68	L#0	Success count
+Reserved_1	WORD	72	W#16#0	Reserved for expansion
+Reserved_2	WORD	74	W#16#0	Reserved for expansion
+Reserved_3	WORD	76	W#16#0	Reserved for expansion
+Reserved_4	WORD	78	W#16#0	Reserved for expansion
+Reserved_5	WORD	80	W#16#0	Reserved for expansion
+Reserved_6	WORD	82	W#16#0	Reserved for expansion
+Reserved_7	WORD	84	W#16#0	Reserved for expansion
+Reserved_8	WORD	86	W#16#0	Reserved for expansion
+Reserved_9	WORD	88	W#16#0	Reserved for expansion
+Reserved_10	WORD	90	W#16#0	Reserved for expansion
+Reserved_11	WORD	92	W#16#0	Reserved for expansion
+Reserved_12	WORD	94	W#16#0	Reserved for expansion
+Reserved_13	WORD	96	W#16#0	Reserved for expansion
+Reserved_14	WORD	98	W#16#0	Reserved for expansion
+Reserved_15	WORD	100	W#16#0	Reserved for expansion

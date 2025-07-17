@@ -1,0 +1,340 @@
+ORGANIZATION_BLOCK OB35
+TITLE = 'Cyclic Interrupt 100ms'
+VERSION : 0.1
+
+VAR_TEMP
+  OB35_EV_CLASS : BYTE ;            // Event class
+  OB35_STRT_INF : BYTE ;            // Start information
+  OB35_PRIORITY : BYTE ;            // Priority
+  OB35_OB_NUMBR : BYTE ;            // OB number
+  OB35_RESERVED_1 : BYTE ;          // Reserved
+  OB35_RESERVED_2 : BYTE ;          // Reserved
+  OB35_PERIOD_EXE : WORD ;          // Period of execution
+  OB35_RESERVED_3 : WORD ;          // Reserved
+  OB35_RESERVED_4 : WORD ;          // Reserved
+  OB35_DATE_TIME : DATE_AND_TIME ;  // Date and time
+END_VAR
+
+VAR_TEMP
+  CycleCounter : DINT ;             // Cycle counter
+  SystemTime : TIME ;               // System time
+  Area1Status : WORD ;              // Area 1 status
+  Area2Status : WORD ;              // Area 2 status
+END_VAR
+
+BEGIN
+// =============================================================================
+// ORGANIZATION BLOCK OB35 - CYCLIC INTERRUPT 100ms
+// =============================================================================
+// Description: Cyclic interrupt for time-critical tasks
+// Cycle Time: 100ms
+// Priority: High (Priority 10)
+// =============================================================================
+
+// -----------------------------------------------------------------------
+// CYCLE COUNTER AND TIMING
+// -----------------------------------------------------------------------
+
+// Increment cycle counter
+      L     MD500                   // Load cycle counter
+      L     1
+      +D
+      T     MD500                   // Store cycle counter
+
+// Update system time
+      CALL  FC8                     // Get system time
+      T     #SystemTime
+
+// -----------------------------------------------------------------------
+// AREA 1 MONITORING
+// -----------------------------------------------------------------------
+
+// Check Area 1 status
+      A     M12.0                   // Area 1 enabled
+      JCN   AREA1_DISABLED
+
+// Update Area 1 status word
+      L     0
+      T     #Area1Status
+
+// Bit 0: Area enabled
+      A     M12.0
+      JCN   AREA1_BIT1
+      L     #Area1Status
+      L     1
+      OW
+      T     #Area1Status
+
+AREA1_BIT1:
+// Bit 1: Safety OK
+      A     M1.1
+      JCN   AREA1_BIT2
+      L     #Area1Status
+      L     2
+      OW
+      T     #Area1Status
+
+AREA1_BIT2:
+// Bit 2: Robot ready
+      A     I4.0
+      A     I4.1
+      A     I4.2
+      JCN   AREA1_BIT3
+      L     #Area1Status
+      L     4
+      OW
+      T     #Area1Status
+
+AREA1_BIT3:
+// Bit 3: Conveyor running
+      A     Q32.0
+      JCN   AREA1_BIT4
+      L     #Area1Status
+      L     8
+      OW
+      T     #Area1Status
+
+AREA1_BIT4:
+// Bit 4: Production active
+      L     DB10.DBW100
+      L     0
+      >I
+      JCN   AREA1_STORE
+      L     #Area1Status
+      L     16
+      OW
+      T     #Area1Status
+
+AREA1_STORE:
+// Store Area 1 status
+      L     #Area1Status
+      T     MW510
+
+      JU    AREA2_CHECK
+
+AREA1_DISABLED:
+// Area 1 disabled
+      L     0
+      T     MW510
+
+// -----------------------------------------------------------------------
+// AREA 2 MONITORING
+// -----------------------------------------------------------------------
+
+AREA2_CHECK:
+// Check Area 2 status
+      A     M62.0                   // Area 2 enabled
+      JCN   AREA2_DISABLED
+
+// Update Area 2 status word (similar to Area 1)
+      L     0
+      T     #Area2Status
+
+// Bit 0: Area enabled
+      A     M62.0
+      JCN   AREA2_BIT1
+      L     #Area2Status
+      L     1
+      OW
+      T     #Area2Status
+
+AREA2_BIT1:
+// Bit 1: Safety OK
+      A     M1.1
+      JCN   AREA2_BIT2
+      L     #Area2Status
+      L     2
+      OW
+      T     #Area2Status
+
+AREA2_BIT2:
+// Bit 2: Robot ready
+      A     I54.0                   // Area 2 robot inputs
+      A     I54.1
+      A     I54.2
+      JCN   AREA2_BIT3
+      L     #Area2Status
+      L     4
+      OW
+      T     #Area2Status
+
+AREA2_BIT3:
+// Bit 3: Conveyor running
+      A     Q82.0                   // Area 2 conveyor
+      JCN   AREA2_BIT4
+      L     #Area2Status
+      L     8
+      OW
+      T     #Area2Status
+
+AREA2_BIT4:
+// Bit 4: Production active
+      L     DB60.DBW100
+      L     0
+      >I
+      JCN   AREA2_STORE
+      L     #Area2Status
+      L     16
+      OW
+      T     #Area2Status
+
+AREA2_STORE:
+// Store Area 2 status
+      L     #Area2Status
+      T     MW520
+
+      JU    DIAGNOSTICS
+
+AREA2_DISABLED:
+// Area 2 disabled
+      L     0
+      T     MW520
+
+// -----------------------------------------------------------------------
+// SYSTEM DIAGNOSTICS
+// -----------------------------------------------------------------------
+
+DIAGNOSTICS:
+// Update system diagnostics
+      CALL  FC102                   // Area 1 diagnostics
+      CALL  FC112                   // Area 2 diagnostics
+
+// Check for system errors
+      A     DB10.DBX400.0          // Area 1 error
+      O     DB60.DBX400.0          // Area 2 error
+      =     M1.7                   // System error flag
+
+// -----------------------------------------------------------------------
+// COMMUNICATION MONITORING
+// -----------------------------------------------------------------------
+
+// Monitor laptop communication timeout
+      A     DB100.DBX2.0            // Communication active
+      TON   T100, T#10S             // 10 second timeout
+      
+      A     T100
+      =     M2.0                    // Communication timeout
+
+// Monitor robot communication
+      A     I64.0                   // Area 1 robot handshake
+      TON   T101, T#5S              // 5 second timeout
+      
+      A     T101
+      =     M2.1                    // Area 1 robot timeout
+
+      A     I114.0                  // Area 2 robot handshake
+      TON   T102, T#5S              // 5 second timeout
+      
+      A     T102
+      =     M2.2                    // Area 2 robot timeout
+
+// -----------------------------------------------------------------------
+// PRODUCTION COUNTERS
+// -----------------------------------------------------------------------
+
+// Update production counters every 10 cycles (1 second)
+      L     MD500                   // Cycle counter
+      L     10
+      MOD
+      L     0
+      ==I
+      JCN   COUNTER_DONE
+
+// Update hourly production rate
+      L     DB10.DBW200             // Area 1 product count
+      L     MW530                   // Previous count
+      -I
+      T     MW532                   // Products this second
+
+// Update Area 1 production rate
+      L     MW532
+      L     3600
+      *I
+      T     MW534                   // Products per hour
+
+// Store current count
+      L     DB10.DBW200
+      T     MW530
+
+COUNTER_DONE:
+
+// -----------------------------------------------------------------------
+// ALARM PROCESSING
+// -----------------------------------------------------------------------
+
+// Check for alarms
+      A     M1.7                    // System error
+      JCN   NO_ALARM
+
+// Generate alarm
+      CALL  SFC17                   // Generate alarm
+      MSG_EVID := W#16#1000
+      MSG_ATYPE := B#16#01
+      MSG_AUSTATUS := B#16#00
+
+NO_ALARM:
+
+// -----------------------------------------------------------------------
+// WATCHDOG REFRESH
+// -----------------------------------------------------------------------
+
+// Refresh watchdog timer
+      CALL  SFC46                   // Refresh watchdog
+      RET_VAL := MW540
+
+// -----------------------------------------------------------------------
+// DATA LOGGING
+// -----------------------------------------------------------------------
+
+// Log data every 100 cycles (10 seconds)
+      L     MD500                   // Cycle counter
+      L     100
+      MOD
+      L     0
+      ==I
+      JCN   LOG_DONE
+
+// Log Area 1 data
+      L     MW510                   // Area 1 status
+      T     DB5.DBW[MW542]          // Store in circular buffer
+
+// Log Area 2 data
+      L     MW520                   // Area 2 status
+      T     DB55.DBW[MW542]         // Store in circular buffer
+
+// Update buffer pointer
+      L     MW542
+      L     2
+      +I
+      L     1000
+      MOD
+      T     MW542
+
+LOG_DONE:
+
+// -----------------------------------------------------------------------
+// COMMUNICATION DATA UPDATE
+// -----------------------------------------------------------------------
+
+// Update coordinate exchange system data
+      L     MW510                   // Area 1 status
+      T     DB101.DBW22             // Motion status
+
+      L     MW520                   // Area 2 status
+      T     DB101.DBW24             // Robot error code
+
+// Update timestamp
+      L     #SystemTime
+      T     DB101.DBW28             // Feedback timestamp
+
+// -----------------------------------------------------------------------
+// EXIT
+// -----------------------------------------------------------------------
+
+// Update execution time
+      CALL  FC8                     // Get system time
+      L     #SystemTime
+      -T
+      T     MW550                   // Execution time
+
+END_ORGANIZATION_BLOCK
