@@ -1,0 +1,216 @@
+// =======================================================================
+// INTEGRATION WITH EXISTING ORGANIZATION BLOCKS
+// =======================================================================
+// Description: Minimal integration code to add to existing OB1 or OB35
+// Purpose: Enable coordinate exchange system without modifying main program
+// Requirement: Add only these function calls to existing blocks
+// =======================================================================
+
+// =======================================================================
+// OPTION 1: INTEGRATION WITH EXISTING OB1 (MAIN PROGRAM)
+// =======================================================================
+// Add these lines to the end of existing OB1, before END_ORGANIZATION_BLOCK
+
+// Coordinate exchange system calls - add to existing OB1
+NETWORK
+TITLE = 'Coordinate Exchange System'
+
+// Call laptop communication handler
+CALL FC300 (
+  Enable := TRUE,                         // Always enabled
+  Reset := M100.0,                        // Reset on M100.0
+  Status := MW200,                        // Status in MW200
+  Error := M100.1,                        // Error flag in M100.1
+  ErrorCode := MW202                      // Error code in MW202
+) ;
+
+// Call robot communication handler only if laptop handler is active
+A     MW200                               // Check if laptop handler is active
+L     0
+<>I
+JCN   SKIP_ROBOT_HANDLER
+
+CALL FC301 (
+  Command := 0,                           // No direct command (handled by FC300)
+  Area := 0,
+  SetNumber := 0,
+  Enable := TRUE,
+  Reset := M100.0,
+  Success := M100.2,                      // Success flag in M100.2
+  ErrorCode := MW204,                     // Error code in MW204
+  RobotBusy := M100.3                     // Robot busy flag in M100.3
+) ;
+
+SKIP_ROBOT_HANDLER:
+
+// =======================================================================
+// OPTION 2: INTEGRATION WITH EXISTING OB35 (CYCLIC INTERRUPT)
+// =======================================================================
+// Add these lines to the end of existing OB35, before END_ORGANIZATION_BLOCK
+
+// High-priority coordinate exchange monitoring - add to existing OB35
+NETWORK
+TITLE = 'Coordinate Exchange Monitoring'
+
+// Monitor system status every 100ms
+A     T#100ms                             // 100ms trigger
+JCN   SKIP_MONITORING
+
+// Update system timestamps
+CALL FC8 (
+  RET_VAL := INT#0
+) ;
+
+// Monitor communication timeouts
+L     DB100.TimestampLow
+L     DWORD#5000                          // 5 second timeout
+<D
+JCN   TIMEOUT_OK
+
+// Reset communication on timeout
+S     M100.0                              // Set reset flag
+R     M100.0                              // Clear reset flag after 1 cycle
+
+TIMEOUT_OK:
+
+// Update diagnostic counters
+L     DB101.CycleCounter
+L     1
++D
+T     DB101.CycleCounter
+
+SKIP_MONITORING:
+
+// =======================================================================
+// OPTION 3: STANDALONE INTEGRATION (RECOMMENDED)
+// =======================================================================
+// Create a new Organization Block OB100 specifically for coordinate exchange
+
+ORGANIZATION_BLOCK OB100
+TITLE = 'Coordinate Exchange System'
+VERSION : 1.0
+
+VAR_TEMP
+  SystemEnable : BOOL ;                   // System enable flag
+  SystemReset : BOOL ;                    // System reset flag
+  SystemStatus : WORD ;                   // System status
+  SystemError : BOOL ;                    // System error flag
+END_VAR
+
+BEGIN
+// =======================================================================
+// STANDALONE COORDINATE EXCHANGE SYSTEM
+// =======================================================================
+// This OB can be called from existing OB1 or run as separate cyclic block
+
+// Read system enable from existing program
+A     M12.0                               // Use existing area enable
+A     M1.1                                // Use existing safety status
+=     #SystemEnable
+
+// Read system reset from existing program
+A     M0.7                                // Use existing reset signal
+=     #SystemReset
+
+// Main coordinate exchange handler
+CALL FC300 (
+  Enable := #SystemEnable,
+  Reset := #SystemReset,
+  Status := #SystemStatus,
+  Error := #SystemError,
+  ErrorCode := MW250
+) ;
+
+// Robot communication handler
+CALL FC301 (
+  Command := 0,
+  Area := 0,
+  SetNumber := 0,
+  Enable := #SystemEnable,
+  Reset := #SystemReset,
+  Success := M110.0,
+  ErrorCode := MW252,
+  RobotBusy := M110.1
+) ;
+
+// Coordinate validation and management
+CALL FC302 (
+  Command := 4,                           // Validate all sets
+  Area := 1,
+  SetNumber := 1,
+  X_Coord := 0,
+  Y_Coord := 0,
+  Z_Coord := 0,
+  RX_Rot := 0,
+  RY_Rot := 0,
+  RZ_Rot := 0,
+  GripperCmd := 0,
+  Speed := 50,
+  Success := M110.2,
+  ErrorCode := MW254,
+  ValidSets := MW256
+) ;
+
+// Status outputs for existing program
+A     #SystemError
+=     M110.7                              // System error flag
+L     #SystemStatus
+T     MW258                               // System status word
+
+END_ORGANIZATION_BLOCK
+
+// =======================================================================
+// INTEGRATION INSTRUCTIONS
+// =======================================================================
+
+// 1. Import all Data Blocks (DB100, DB101, DB102)
+// 2. Import all Functions (FC300, FC301, FC302, FC303)
+// 3. Choose ONE of the integration options above:
+//    - Option 1: Add to existing OB1 (simple integration)
+//    - Option 2: Add to existing OB35 (high-priority monitoring)
+//    - Option 3: Create new OB100 (recommended - standalone)
+
+// 4. Configure memory addresses:
+//    - MW200-MW210: Coordinate exchange status
+//    - M100.0-M100.7: Control flags
+//    - M110.0-M110.7: Status flags
+
+// 5. Network configuration:
+//    - Configure S7 communication on port 102
+//    - Set PLC IP address for laptop access
+//    - Ensure PROFIBUS-DP for robot communication
+
+// 6. Testing procedure:
+//    - Test laptop communication first
+//    - Verify Data Block read/write
+//    - Test coordinate validation
+//    - Test robot communication
+//    - Verify complete data flow
+
+// =======================================================================
+// MEMORY ALLOCATION SUMMARY
+// =======================================================================
+// DB100: Laptop Interface (100 bytes)
+// DB101: Robot Interface (100 bytes)
+// DB102: Coordinate Storage (1000 bytes)
+// MW200-MW210: Status and error codes
+// M100.0-M100.7: Control flags
+// M110.0-M110.7: Status flags
+// Total additional memory: ~1.3 KB
+
+// =======================================================================
+// PERFORMANCE IMPACT
+// =======================================================================
+// Estimated cycle time impact: < 5ms
+// Memory usage: 1.3 KB additional
+// Network load: Minimal (handshake protocol)
+// CPU load: < 2% additional
+
+// =======================================================================
+// SAFETY CONSIDERATIONS
+// =======================================================================
+// - All coordinate validation includes safety checks
+// - Emergency stop integration available
+// - Independent operation from main program
+// - Fail-safe error handling
+// - Timeout protection for all communications

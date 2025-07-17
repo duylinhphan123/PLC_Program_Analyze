@@ -1,0 +1,204 @@
+{
+  "network": {
+    "plc_ip": "192.168.1.100",
+    "laptop_ip": "192.168.1.10",
+    "robot_ip": "192.168.1.20",
+    "subnet_mask": "255.255.255.0",
+    "gateway": "192.168.1.1",
+    "dns": ["192.168.1.1", "8.8.8.8"],
+    "ports": {
+      "plc_s7": 102,
+      "profibus_dp": 1234,
+      "ethernet_ip": 44818,
+      "modbus_tcp": 502
+    }
+  },
+  "plc_configuration": {
+    "cpu_type": "CPU 412-3H",
+    "firmware_version": "V6.0.8",
+    "memory": {
+      "work_memory": "1.5 MB",
+      "load_memory": "8 MB"
+    },
+    "communication_modules": [
+      {
+        "slot": 4,
+        "module": "CP 443-1",
+        "description": "Ethernet communication processor"
+      },
+      {
+        "slot": 5,
+        "module": "DP Master",
+        "description": "PROFIBUS-DP master interface"
+      }
+    ],
+    "cycle_time": {
+      "ob1": 10,
+      "ob35": 100
+    }
+  },
+  "robot_configuration": {
+    "manufacturer": "ABB",
+    "model": "IRB 2600",
+    "controller": "IRC5",
+    "software_version": "RobotWare 6.08",
+    "reach": 1850,
+    "payload": 20,
+    "axes": 6,
+    "communication": {
+      "profibus_dp": {
+        "enabled": true,
+        "address": 3,
+        "baud_rate": 1500000
+      },
+      "ethernet": {
+        "enabled": true,
+        "ip": "192.168.1.20",
+        "port": 80
+      }
+    },
+    "tool_data": {
+      "tool0": {
+        "name": "Default Tool",
+        "tcp": [0, 0, 0, 0, 0, 0],
+        "mass": 0,
+        "cog": [0, 0, 0]
+      },
+      "gripper": {
+        "name": "Pneumatic Gripper",
+        "tcp": [0, 0, 150, 0, 0, 0],
+        "mass": 2.5,
+        "cog": [0, 0, 75]
+      }
+    },
+    "work_objects": {
+      "wobj0": {
+        "name": "Base Frame",
+        "uframe": [0, 0, 0, 0, 0, 0],
+        "oframe": [0, 0, 0, 0, 0, 0]
+      },
+      "area1_frame": {
+        "name": "Area 1 Frame",
+        "uframe": [500, -1000, 0, 0, 0, 0],
+        "oframe": [0, 0, 0, 0, 0, 0]
+      },
+      "area2_frame": {
+        "name": "Area 2 Frame",
+        "uframe": [500, 1000, 0, 0, 0, 0],
+        "oframe": [0, 0, 0, 0, 0, 0]
+      }
+    }
+  },
+  "profibus_dp_configuration": {
+    "master_address": 2,
+    "baud_rate": 1500000,
+    "slaves": [
+      {
+        "address": 3,
+        "name": "ABB Robot",
+        "module": "Robot Controller",
+        "input_length": 32,
+        "output_length": 32,
+        "configuration": "Standard I/O"
+      }
+    ],
+    "diagnostic_address": 126,
+    "watchdog_time": 100
+  },
+  "ethernet_configuration": {
+    "switch_ip": "192.168.1.1",
+    "switch_model": "Industrial Ethernet Switch",
+    "vlan_id": 1,
+    "quality_of_service": "enabled",
+    "redundancy": "enabled",
+    "protocols": {
+      "s7_communication": {
+        "enabled": true,
+        "port": 102,
+        "max_connections": 8
+      },
+      "profinet": {
+        "enabled": false,
+        "device_name": "PLC_Device"
+      },
+      "opc_ua": {
+        "enabled": false,
+        "port": 4840
+      }
+    }
+  },
+  "security": {
+    "access_control": {
+      "enabled": true,
+      "password_policy": "strong",
+      "session_timeout": 3600
+    },
+    "user_accounts": [
+      {
+        "username": "operator",
+        "role": "operator",
+        "permissions": ["read", "write_coordinates", "execute_motion"]
+      },
+      {
+        "username": "engineer",
+        "role": "engineer",
+        "permissions": ["read", "write", "configure", "diagnose"]
+      },
+      {
+        "username": "admin",
+        "role": "administrator",
+        "permissions": ["full_access"]
+      }
+    ],
+    "certificates": {
+      "tls_enabled": true,
+      "certificate_path": "certificates/server.crt",
+      "private_key_path": "certificates/server.key"
+    }
+  },
+  "backup_configuration": {
+    "enabled": true,
+    "schedule": "daily",
+    "retention_days": 30,
+    "backup_location": "\\\\backup-server\\plc_backups",
+    "components": [
+      "plc_program",
+      "coordinate_sets",
+      "configuration",
+      "user_data"
+    ]
+  },
+  "monitoring": {
+    "enabled": true,
+    "interval": 5,
+    "parameters": [
+      "cpu_load",
+      "memory_usage",
+      "communication_status",
+      "robot_status",
+      "error_count"
+    ],
+    "alerts": {
+      "email_enabled": true,
+      "email_recipients": ["maintenance@company.com", "engineer@company.com"],
+      "sms_enabled": false,
+      "thresholds": {
+        "cpu_load": 80,
+        "memory_usage": 85,
+        "communication_errors": 10
+      }
+    }
+  },
+  "maintenance": {
+    "schedule": {
+      "daily": ["backup_check", "communication_test"],
+      "weekly": ["performance_analysis", "log_cleanup"],
+      "monthly": ["system_health_check", "software_updates"]
+    },
+    "calibration": {
+      "robot_calibration_interval": 180,
+      "coordinate_system_check": 30,
+      "tool_calibration": 90
+    }
+  }
+}

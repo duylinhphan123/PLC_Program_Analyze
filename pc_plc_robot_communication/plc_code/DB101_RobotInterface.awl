@@ -1,0 +1,122 @@
+DATA_BLOCK DB101
+TITLE = 'Robot Communication Interface'
+VERSION : 1.0
+
+STRUCT
+  // =======================================================================
+  // DB101 - ROBOT COMMUNICATION INTERFACE
+  // =======================================================================
+  // Description: Data exchange buffer between PLC and Robot
+  // Size: 50 words (100 bytes)
+  // Protocol: Real-time handshake with robot controller
+  // =======================================================================
+
+  // COMMAND AND STATUS SECTION (Words 0-3)
+  RobotCommand : WORD ;                   // DBW0: Command to Robot
+  RobotStatus : WORD ;                    // DBW2: Status from Robot
+  CurrentArea : WORD ;                    // DBW4: Current active area
+  CurrentSet : WORD ;                     // DBW6: Current coordinate set
+
+  // CURRENT POSITION FEEDBACK (Words 4-11)
+  CurrentX : DINT ;                       // DBW8: Current X position
+  CurrentY : DINT ;                       // DBW12: Current Y position
+  CurrentZ : DINT ;                       // DBW16: Current Z position
+  CurrentRX : INT ;                       // DBW20: Current RX rotation
+  CurrentRY : INT ;                       // DBW22: Current RY rotation
+  CurrentRZ : INT ;                       // DBW24: Current RZ rotation
+
+  // MOTION STATUS SECTION (Words 12-15)
+  MotionStatus : WORD ;                   // DBW26: Motion status
+  GripperFeedback : WORD ;                // DBW28: Gripper feedback
+  CurrentSpeed : WORD ;                   // DBW30: Current speed %
+  PathProgress : WORD ;                   // DBW32: Path completion %
+
+  // TIMING AND ERROR SECTION (Words 16-19)
+  ExecutionTime : DWORD ;                 // DBW34: Execution time in ms
+  RobotErrorCode : WORD ;                 // DBW38: Robot error code
+  FeedbackTimestamp : DWORD ;             // DBW40: Feedback timestamp
+  Reserved1 : WORD ;                      // DBW44: Reserved
+
+  // DIAGNOSTIC SECTION (Words 20-29)
+  CycleCounter : DWORD ;                  // DBW46: Communication cycle counter
+  SuccessfulCommands : DWORD ;            // DBW50: Successful command count
+  FailedCommands : DWORD ;                // DBW54: Failed command count
+  AverageExecutionTime : DWORD ;          // DBW58: Average execution time
+  MaxExecutionTime : DWORD ;              // DBW62: Maximum execution time
+
+  // RESERVED SECTION (Words 30-49)
+  Reserved : ARRAY[1..20] OF WORD ;       // DBW66-104: Future expansion
+
+END_STRUCT
+
+BEGIN
+  // =======================================================================
+  // INITIAL VALUES
+  // =======================================================================
+  RobotCommand := 0 ;
+  RobotStatus := 0 ;
+  CurrentArea := 1 ;
+  CurrentSet := 0 ;
+  CurrentX := 0 ;
+  CurrentY := 0 ;
+  CurrentZ := 0 ;
+  CurrentRX := 0 ;
+  CurrentRY := 0 ;
+  CurrentRZ := 0 ;
+  MotionStatus := 0 ;
+  GripperFeedback := 0 ;
+  CurrentSpeed := 0 ;
+  PathProgress := 0 ;
+  ExecutionTime := 0 ;
+  RobotErrorCode := 0 ;
+  FeedbackTimestamp := 0 ;
+  Reserved1 := 0 ;
+  CycleCounter := 0 ;
+  SuccessfulCommands := 0 ;
+  FailedCommands := 0 ;
+  AverageExecutionTime := 0 ;
+  MaxExecutionTime := 0 ;
+
+END_DATA_BLOCK
+
+// =======================================================================
+// ROBOT COMMAND CODES (DB101.RobotCommand)
+// =======================================================================
+// 0x0000 = No command
+// 0x0001 = Move to position
+// 0x0002 = Get current position
+// 0x0003 = Open gripper
+// 0x0004 = Close gripper
+// 0x0005 = Stop motion
+// 0x0006 = Reset robot
+// 0x0007 = Home position
+// 0x0008 = Set speed override
+// 0x0009 = Emergency stop
+// 0x000A = Resume motion
+
+// =======================================================================
+// ROBOT STATUS CODES (DB101.RobotStatus)
+// =======================================================================
+// 0x0000 = Idle
+// 0x0001 = Moving
+// 0x0002 = Position reached
+// 0x0003 = Error state
+// 0x0004 = Emergency stop active
+// 0x0005 = Homing
+// 0x0006 = Manual mode
+// 0x0007 = Gripper opening
+// 0x0008 = Gripper closing
+// 0x0009 = Waiting for command
+// 0x000A = Calibrating
+
+// =======================================================================
+// MOTION STATUS CODES (DB101.MotionStatus)
+// =======================================================================
+// 0x0000 = Stopped
+// 0x0001 = Linear motion
+// 0x0002 = Joint motion
+// 0x0003 = Circular motion
+// 0x0004 = Path following
+// 0x0005 = Positioning
+// 0x0006 = Approach motion
+// 0x0007 = Depart motion

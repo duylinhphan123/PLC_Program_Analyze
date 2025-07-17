@@ -1,0 +1,286 @@
+FUNCTION FC302 : VOID
+TITLE = 'Coordinate Manager'
+VERSION : 1.0
+
+VAR_INPUT
+  Command : WORD ;                        // Command (1=Write, 2=Read, 3=Delete, 4=Validate)
+  Area : WORD ;                           // Area number (1 or 2)
+  SetNumber : WORD ;                      // Set number (1-10)
+  X_Coord : DINT ;                        // X coordinate
+  Y_Coord : DINT ;                        // Y coordinate
+  Z_Coord : DINT ;                        // Z coordinate
+  RX_Rot : INT ;                          // RX rotation
+  RY_Rot : INT ;                          // RY rotation
+  RZ_Rot : INT ;                          // RZ rotation
+  GripperCmd : WORD ;                     // Gripper command
+  Speed : WORD ;                          // Speed setting
+END_VAR
+
+VAR_OUTPUT
+  Success : BOOL ;                        // Success flag
+  ErrorCode : WORD ;                      // Error code
+  ValidSets : WORD ;                      // Number of valid sets
+END_VAR
+
+VAR_TEMP
+  Checksum : WORD ;                       // Calculated checksum
+  Timestamp : DWORD ;                     // Current timestamp
+  IndexValid : BOOL ;                     // Index validation result
+  DataValid : BOOL ;                      // Data validation result
+  TempWord : WORD ;                       // Temporary word
+  BitMask : WORD ;                        // Bit mask for set flags
+END_VAR
+
+VAR_STATIC
+  LastAccessTime : DWORD ;                // Last access timestamp
+  AccessCounter : DWORD ;                 // Access counter
+END_VAR
+
+BEGIN
+// =======================================================================
+// FUNCTION FC302 - COORDINATE MANAGER
+// =======================================================================
+// Description: Manages coordinate sets in DB102 storage
+// Called from: FC300 (Laptop Handler)
+// Operations: Write, Read, Delete, Validate coordinate sets
+// =======================================================================
+
+// Initialize outputs
+#Success := FALSE ;
+#ErrorCode := 0 ;
+#ValidSets := 0 ;
+
+// Validate input parameters
+#IndexValid := (#Area >= 1) AND (#Area <= 2) AND (#SetNumber >= 1) AND (#SetNumber <= 10) ;
+
+IF NOT #IndexValid THEN
+  #ErrorCode := 4001 ;                    // Invalid area or set number
+  RETURN ;
+END_IF ;
+
+// Calculate bit mask for set flags
+#BitMask := SHL(IN := 1, N := (#SetNumber - 1)) ;
+
+// Get current timestamp
+CALL FC8 (
+  RET_VAL := INT#0
+) ;
+#Timestamp := DWORD#0 ;                   // Placeholder for actual timestamp
+
+// Update access counter
+#AccessCounter := #AccessCounter + 1 ;
+DB102.SystemStatus.AccessCounter := #AccessCounter ;
+
+// -----------------------------------------------------------------------
+// COMMAND PROCESSING
+// -----------------------------------------------------------------------
+
+CASE #Command OF
+
+  // Write coordinate set command
+  1:
+    // Validate coordinate data
+    CALL FC303 (
+      Area := #Area,
+      SetNumber := #SetNumber,
+      X_Coord := #X_Coord,
+      Y_Coord := #Y_Coord,
+      Z_Coord := #Z_Coord,
+      RX_Rot := #RX_Rot,
+      RY_Rot := #RY_Rot,
+      RZ_Rot := #RZ_Rot,
+      Valid := #DataValid,
+      ErrorCode := #ErrorCode
+    ) ;
+    
+    IF #DataValid THEN
+      // Calculate checksum
+      #Checksum := 0 ;
+      #Checksum := #Checksum XOR WORD_TO_WORD(DINT_TO_WORD(#X_Coord)) ;
+      #Checksum := #Checksum XOR WORD_TO_WORD(DINT_TO_WORD(#Y_Coord)) ;
+      #Checksum := #Checksum XOR WORD_TO_WORD(DINT_TO_WORD(#Z_Coord)) ;
+      #Checksum := #Checksum XOR #RX_Rot ;
+      #Checksum := #Checksum XOR #RY_Rot ;
+      #Checksum := #Checksum XOR #RZ_Rot ;
+      #Checksum := #Checksum XOR #GripperCmd ;
+      #Checksum := #Checksum XOR #Speed ;
+      
+      // Write to appropriate area
+      IF #Area = 1 THEN
+        DB102.Area1_CoordinateSets[#SetNumber].X_Position := #X_Coord ;
+        DB102.Area1_CoordinateSets[#SetNumber].Y_Position := #Y_Coord ;
+        DB102.Area1_CoordinateSets[#SetNumber].Z_Position := #Z_Coord ;
+        DB102.Area1_CoordinateSets[#SetNumber].RX_Rotation := #RX_Rot ;
+        DB102.Area1_CoordinateSets[#SetNumber].RY_Rotation := #RY_Rot ;
+        DB102.Area1_CoordinateSets[#SetNumber].RZ_Rotation := #RZ_Rot ;
+        DB102.Area1_CoordinateSets[#SetNumber].GripperCommand := #GripperCmd ;
+        DB102.Area1_CoordinateSets[#SetNumber].SpeedSetting := #Speed ;
+        DB102.Area1_CoordinateSets[#SetNumber].MotionType := 1 ;
+        DB102.Area1_CoordinateSets[#SetNumber].PrecisionMode := 1 ;
+        DB102.Area1_CoordinateSets[#SetNumber].ValidationFlag := 1 ;
+        DB102.Area1_CoordinateSets[#SetNumber].Checksum := #Checksum ;
+        DB102.Area1_CoordinateSets[#SetNumber].Timestamp := #Timestamp ;
+        
+        // Update valid sets bitmask
+        DB102.SystemStatus.Area1_ValidSets := DB102.SystemStatus.Area1_ValidSets OR #BitMask ;
+        
+      ELSE // Area = 2
+        DB102.Area2_CoordinateSets[#SetNumber].X_Position := #X_Coord ;
+        DB102.Area2_CoordinateSets[#SetNumber].Y_Position := #Y_Coord ;
+        DB102.Area2_CoordinateSets[#SetNumber].Z_Position := #Z_Coord ;
+        DB102.Area2_CoordinateSets[#SetNumber].RX_Rotation := #RX_Rot ;
+        DB102.Area2_CoordinateSets[#SetNumber].RY_Rotation := #RY_Rot ;
+        DB102.Area2_CoordinateSets[#SetNumber].RZ_Rotation := #RZ_Rot ;
+        DB102.Area2_CoordinateSets[#SetNumber].GripperCommand := #GripperCmd ;
+        DB102.Area2_CoordinateSets[#SetNumber].SpeedSetting := #Speed ;
+        DB102.Area2_CoordinateSets[#SetNumber].MotionType := 1 ;
+        DB102.Area2_CoordinateSets[#SetNumber].PrecisionMode := 1 ;
+        DB102.Area2_CoordinateSets[#SetNumber].ValidationFlag := 1 ;
+        DB102.Area2_CoordinateSets[#SetNumber].Checksum := #Checksum ;
+        DB102.Area2_CoordinateSets[#SetNumber].Timestamp := #Timestamp ;
+        
+        // Update valid sets bitmask
+        DB102.SystemStatus.Area2_ValidSets := DB102.SystemStatus.Area2_ValidSets OR #BitMask ;
+      END_IF ;
+      
+      // Update system status
+      DB102.SystemStatus.LastAccessedArea := #Area ;
+      DB102.SystemStatus.LastAccessedSet := #SetNumber ;
+      DB102.SystemStatus.LastUpdateTime := #Timestamp ;
+      
+      #Success := TRUE ;
+      
+    ELSE
+      #ErrorCode := 4002 ;                // Data validation failed
+    END_IF ;
+
+  // Read coordinate set command
+  2:
+    // Check if set exists and is valid
+    IF #Area = 1 THEN
+      #DataValid := (DB102.SystemStatus.Area1_ValidSets AND #BitMask) <> 0 ;
+      
+      IF #DataValid THEN
+        // Read from Area 1
+        X_Coord := DB102.Area1_CoordinateSets[#SetNumber].X_Position ;
+        Y_Coord := DB102.Area1_CoordinateSets[#SetNumber].Y_Position ;
+        Z_Coord := DB102.Area1_CoordinateSets[#SetNumber].Z_Position ;
+        RX_Rot := DB102.Area1_CoordinateSets[#SetNumber].RX_Rotation ;
+        RY_Rot := DB102.Area1_CoordinateSets[#SetNumber].RY_Rotation ;
+        RZ_Rot := DB102.Area1_CoordinateSets[#SetNumber].RZ_Rotation ;
+        GripperCmd := DB102.Area1_CoordinateSets[#SetNumber].GripperCommand ;
+        Speed := DB102.Area1_CoordinateSets[#SetNumber].SpeedSetting ;
+        
+        // Verify checksum
+        #Checksum := 0 ;
+        #Checksum := #Checksum XOR WORD_TO_WORD(DINT_TO_WORD(X_Coord)) ;
+        #Checksum := #Checksum XOR WORD_TO_WORD(DINT_TO_WORD(Y_Coord)) ;
+        #Checksum := #Checksum XOR WORD_TO_WORD(DINT_TO_WORD(Z_Coord)) ;
+        #Checksum := #Checksum XOR RX_Rot ;
+        #Checksum := #Checksum XOR RY_Rot ;
+        #Checksum := #Checksum XOR RZ_Rot ;
+        #Checksum := #Checksum XOR GripperCmd ;
+        #Checksum := #Checksum XOR Speed ;
+        
+        IF #Checksum = DB102.Area1_CoordinateSets[#SetNumber].Checksum THEN
+          #Success := TRUE ;
+        ELSE
+          #ErrorCode := 4003 ;            // Checksum error
+        END_IF ;
+      ELSE
+        #ErrorCode := 4004 ;              // Set not found or invalid
+      END_IF ;
+      
+    ELSE // Area = 2
+      #DataValid := (DB102.SystemStatus.Area2_ValidSets AND #BitMask) <> 0 ;
+      
+      IF #DataValid THEN
+        // Read from Area 2
+        X_Coord := DB102.Area2_CoordinateSets[#SetNumber].X_Position ;
+        Y_Coord := DB102.Area2_CoordinateSets[#SetNumber].Y_Position ;
+        Z_Coord := DB102.Area2_CoordinateSets[#SetNumber].Z_Position ;
+        RX_Rot := DB102.Area2_CoordinateSets[#SetNumber].RX_Rotation ;
+        RY_Rot := DB102.Area2_CoordinateSets[#SetNumber].RY_Rotation ;
+        RZ_Rot := DB102.Area2_CoordinateSets[#SetNumber].RZ_Rotation ;
+        GripperCmd := DB102.Area2_CoordinateSets[#SetNumber].GripperCommand ;
+        Speed := DB102.Area2_CoordinateSets[#SetNumber].SpeedSetting ;
+        
+        // Verify checksum
+        #Checksum := 0 ;
+        #Checksum := #Checksum XOR WORD_TO_WORD(DINT_TO_WORD(X_Coord)) ;
+        #Checksum := #Checksum XOR WORD_TO_WORD(DINT_TO_WORD(Y_Coord)) ;
+        #Checksum := #Checksum XOR WORD_TO_WORD(DINT_TO_WORD(Z_Coord)) ;
+        #Checksum := #Checksum XOR RX_Rot ;
+        #Checksum := #Checksum XOR RY_Rot ;
+        #Checksum := #Checksum XOR RZ_Rot ;
+        #Checksum := #Checksum XOR GripperCmd ;
+        #Checksum := #Checksum XOR Speed ;
+        
+        IF #Checksum = DB102.Area2_CoordinateSets[#SetNumber].Checksum THEN
+          #Success := TRUE ;
+        ELSE
+          #ErrorCode := 4003 ;            // Checksum error
+        END_IF ;
+      ELSE
+        #ErrorCode := 4004 ;              // Set not found or invalid
+      END_IF ;
+    END_IF ;
+
+  // Delete coordinate set command
+  3:
+    IF #Area = 1 THEN
+      // Clear Area 1 set
+      DB102.Area1_CoordinateSets[#SetNumber].ValidationFlag := 0 ;
+      DB102.Area1_CoordinateSets[#SetNumber].Checksum := 0 ;
+      
+      // Update valid sets bitmask
+      DB102.SystemStatus.Area1_ValidSets := DB102.SystemStatus.Area1_ValidSets AND NOT #BitMask ;
+      
+    ELSE // Area = 2
+      // Clear Area 2 set
+      DB102.Area2_CoordinateSets[#SetNumber].ValidationFlag := 0 ;
+      DB102.Area2_CoordinateSets[#SetNumber].Checksum := 0 ;
+      
+      // Update valid sets bitmask
+      DB102.SystemStatus.Area2_ValidSets := DB102.SystemStatus.Area2_ValidSets AND NOT #BitMask ;
+    END_IF ;
+    
+    #Success := TRUE ;
+
+  // Validate all sets command
+  4:
+    // Count valid sets in both areas
+    #ValidSets := 0 ;
+    #TempWord := DB102.SystemStatus.Area1_ValidSets ;
+    
+    // Count bits in Area 1
+    FOR #SetNumber := 1 TO 10 DO
+      IF (#TempWord AND 1) <> 0 THEN
+        #ValidSets := #ValidSets + 1 ;
+      END_IF ;
+      #TempWord := SHR(IN := #TempWord, N := 1) ;
+    END_FOR ;
+    
+    // Count bits in Area 2
+    #TempWord := DB102.SystemStatus.Area2_ValidSets ;
+    FOR #SetNumber := 1 TO 10 DO
+      IF (#TempWord AND 1) <> 0 THEN
+        #ValidSets := #ValidSets + 1 ;
+      END_IF ;
+      #TempWord := SHR(IN := #TempWord, N := 1) ;
+    END_FOR ;
+    
+    // Update system status
+    DB102.SystemStatus.TotalValidSets := #ValidSets ;
+    #Success := TRUE ;
+
+  // Default case
+  ELSE:
+    #ErrorCode := 4000 ;                  // Unknown command
+
+END_CASE ;
+
+// Update last access time
+#LastAccessTime := #Timestamp ;
+
+END_FUNCTION

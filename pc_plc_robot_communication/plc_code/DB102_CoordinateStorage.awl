@@ -1,0 +1,135 @@
+DATA_BLOCK DB102
+TITLE = 'Coordinate Storage Buffer'
+VERSION : 1.0
+
+STRUCT
+  // =======================================================================
+  // DB102 - COORDINATE STORAGE BUFFER
+  // =======================================================================
+  // Description: Storage for coordinate sets - 10 sets per area, 2 areas
+  // Size: 500 words (1000 bytes)
+  // Structure: Organized by Area and Set Number
+  // =======================================================================
+
+  // AREA 1 COORDINATE SETS (Words 0-199)
+  Area1_CoordinateSets : ARRAY[1..10] OF STRUCT
+    X_Position : DINT ;                   // X coordinate in mm
+    Y_Position : DINT ;                   // Y coordinate in mm
+    Z_Position : DINT ;                   // Z coordinate in mm
+    RX_Rotation : INT ;                   // RX rotation (degrees*100)
+    RY_Rotation : INT ;                   // RY rotation (degrees*100)
+    RZ_Rotation : INT ;                   // RZ rotation (degrees*100)
+    GripperCommand : WORD ;               // Gripper command
+    SpeedSetting : WORD ;                 // Speed setting %
+    MotionType : WORD ;                   // Motion type
+    PrecisionMode : WORD ;                // Precision mode
+    ValidationFlag : WORD ;               // Validation status
+    Checksum : WORD ;                     // Data checksum
+    Timestamp : DWORD ;                   // Creation timestamp
+    Reserved : ARRAY[1..3] OF WORD ;      // Reserved words
+  END_STRUCT ;
+
+  // AREA 2 COORDINATE SETS (Words 200-399)
+  Area2_CoordinateSets : ARRAY[1..10] OF STRUCT
+    X_Position : DINT ;                   // X coordinate in mm
+    Y_Position : DINT ;                   // Y coordinate in mm
+    Z_Position : DINT ;                   // Z coordinate in mm
+    RX_Rotation : INT ;                   // RX rotation (degrees*100)
+    RY_Rotation : INT ;                   // RY rotation (degrees*100)
+    RZ_Rotation : INT ;                   // RZ rotation (degrees*100)
+    GripperCommand : WORD ;               // Gripper command
+    SpeedSetting : WORD ;                 // Speed setting %
+    MotionType : WORD ;                   // Motion type
+    PrecisionMode : WORD ;                // Precision mode
+    ValidationFlag : WORD ;               // Validation status
+    Checksum : WORD ;                     // Data checksum
+    Timestamp : DWORD ;                   // Creation timestamp
+    Reserved : ARRAY[1..3] OF WORD ;      // Reserved words
+  END_STRUCT ;
+
+  // SYSTEM STATUS SECTION (Words 400-449)
+  SystemStatus : STRUCT
+    Area1_ActiveSets : WORD ;             // Active sets bitmask Area 1
+    Area2_ActiveSets : WORD ;             // Active sets bitmask Area 2
+    Area1_ValidSets : WORD ;              // Valid sets bitmask Area 1
+    Area2_ValidSets : WORD ;              // Valid sets bitmask Area 2
+    LastAccessedArea : WORD ;             // Last accessed area
+    LastAccessedSet : WORD ;              // Last accessed set
+    TotalValidSets : WORD ;               // Total valid sets count
+    SystemChecksum : DWORD ;              // System data checksum
+    LastUpdateTime : DWORD ;              // Last update timestamp
+    AccessCounter : DWORD ;               // Total access counter
+    ErrorCounter : DWORD ;                // Error counter
+    Reserved : ARRAY[1..20] OF WORD ;     // Reserved for expansion
+  END_STRUCT ;
+
+  // COORDINATE LIMITS (Words 450-499)
+  CoordinateLimits : STRUCT
+    X_Min : DINT ;                        // X minimum limit
+    X_Max : DINT ;                        // X maximum limit
+    Y_Min : DINT ;                        // Y minimum limit
+    Y_Max : DINT ;                        // Y maximum limit
+    Z_Min : DINT ;                        // Z minimum limit
+    Z_Max : DINT ;                        // Z maximum limit
+    RX_Min : INT ;                        // RX minimum limit
+    RX_Max : INT ;                        // RX maximum limit
+    RY_Min : INT ;                        // RY minimum limit
+    RY_Max : INT ;                        // RY maximum limit
+    RZ_Min : INT ;                        // RZ minimum limit
+    RZ_Max : INT ;                        // RZ maximum limit
+    Speed_Min : WORD ;                    // Speed minimum %
+    Speed_Max : WORD ;                    // Speed maximum %
+    Reserved : ARRAY[1..10] OF WORD ;     // Reserved
+  END_STRUCT ;
+
+END_STRUCT
+
+BEGIN
+  // =======================================================================
+  // INITIAL VALUES - COORDINATE LIMITS
+  // =======================================================================
+  CoordinateLimits.X_Min := -2000 ;      // -2000mm
+  CoordinateLimits.X_Max := 2000 ;       // +2000mm
+  CoordinateLimits.Y_Min := -2000 ;      // -2000mm
+  CoordinateLimits.Y_Max := 2000 ;       // +2000mm
+  CoordinateLimits.Z_Min := 0 ;          // 0mm
+  CoordinateLimits.Z_Max := 2500 ;       // +2500mm
+  CoordinateLimits.RX_Min := -18000 ;    // -180.00 degrees
+  CoordinateLimits.RX_Max := 18000 ;     // +180.00 degrees
+  CoordinateLimits.RY_Min := -18000 ;    // -180.00 degrees
+  CoordinateLimits.RY_Max := 18000 ;     // +180.00 degrees
+  CoordinateLimits.RZ_Min := -18000 ;    // -180.00 degrees
+  CoordinateLimits.RZ_Max := 18000 ;     // +180.00 degrees
+  CoordinateLimits.Speed_Min := 1 ;      // 1%
+  CoordinateLimits.Speed_Max := 100 ;    // 100%
+
+  // =======================================================================
+  // INITIAL VALUES - SYSTEM STATUS
+  // =======================================================================
+  SystemStatus.Area1_ActiveSets := 0 ;
+  SystemStatus.Area2_ActiveSets := 0 ;
+  SystemStatus.Area1_ValidSets := 0 ;
+  SystemStatus.Area2_ValidSets := 0 ;
+  SystemStatus.LastAccessedArea := 1 ;
+  SystemStatus.LastAccessedSet := 1 ;
+  SystemStatus.TotalValidSets := 0 ;
+  SystemStatus.SystemChecksum := 0 ;
+  SystemStatus.LastUpdateTime := 0 ;
+  SystemStatus.AccessCounter := 0 ;
+  SystemStatus.ErrorCounter := 0 ;
+
+END_DATA_BLOCK
+
+// =======================================================================
+// VALIDATION FLAGS (ValidationFlag field)
+// =======================================================================
+// 0x0000 = Invalid/Empty
+// 0x0001 = Valid and ready
+// 0x0002 = Valid but needs verification
+// 0x0003 = Valid but modified
+// 0x0004 = Invalid - out of range
+// 0x0005 = Invalid - checksum error
+// 0x0006 = Invalid - incomplete data
+// 0x0007 = Locked for editing
+// 0x0008 = Reserved
+// 0x0009 = Backup copy

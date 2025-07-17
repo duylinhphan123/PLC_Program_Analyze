@@ -1,0 +1,277 @@
+FUNCTION FC303 : VOID
+TITLE = 'Data Validator'
+VERSION : 1.0
+
+VAR_INPUT
+  Area : WORD ;                           // Area number (1 or 2)
+  SetNumber : WORD ;                      // Set number (1-10)
+  X_Coord : DINT ;                        // X coordinate to validate
+  Y_Coord : DINT ;                        // Y coordinate to validate
+  Z_Coord : DINT ;                        // Z coordinate to validate
+  RX_Rot : INT ;                          // RX rotation to validate
+  RY_Rot : INT ;                          // RY rotation to validate
+  RZ_Rot : INT ;                          // RZ rotation to validate
+  Gripper : WORD ;                        // Gripper command to validate
+  Speed : WORD ;                          // Speed to validate
+END_VAR
+
+VAR_OUTPUT
+  Valid : BOOL ;                          // Validation result
+  ErrorCode : WORD ;                      // Error code
+  WarningCode : WORD ;                    // Warning code
+END_VAR
+
+VAR_TEMP
+  XValid : BOOL ;                         // X coordinate valid flag
+  YValid : BOOL ;                         // Y coordinate valid flag
+  ZValid : BOOL ;                         // Z coordinate valid flag
+  RXValid : BOOL ;                        // RX rotation valid flag
+  RYValid : BOOL ;                        // RY rotation valid flag
+  RZValid : BOOL ;                        // RZ rotation valid flag
+  GripperValid : BOOL ;                   // Gripper valid flag
+  SpeedValid : BOOL ;                     // Speed valid flag
+  IndexValid : BOOL ;                     // Index valid flag
+  WorkspaceValid : BOOL ;                 // Workspace valid flag
+  Distance : REAL ;                       // Distance calculation
+  TempReal : REAL ;                       // Temporary real value
+END_VAR
+
+VAR_STATIC
+  ValidationCounter : DWORD ;             // Validation counter
+  ErrorCounter : DWORD ;                  // Error counter
+  WarningCounter : DWORD ;                // Warning counter
+END_VAR
+
+BEGIN
+// =======================================================================
+// FUNCTION FC303 - DATA VALIDATOR
+// =======================================================================
+// Description: Validates coordinate data against system limits
+// Called from: FC300, FC302
+// Validation: Range checking, workspace validation, safety checks
+// =======================================================================
+
+// Initialize outputs
+#Valid := FALSE ;
+#ErrorCode := 0 ;
+#WarningCode := 0 ;
+
+// Increment validation counter
+#ValidationCounter := #ValidationCounter + 1 ;
+
+// -----------------------------------------------------------------------
+// INDEX VALIDATION
+// -----------------------------------------------------------------------
+
+#IndexValid := (#Area >= 1) AND (#Area <= 2) AND (#SetNumber >= 1) AND (#SetNumber <= 10) ;
+
+IF NOT #IndexValid THEN
+  #ErrorCode := 5001 ;                    // Invalid area or set number
+  #ErrorCounter := #ErrorCounter + 1 ;
+  RETURN ;
+END_IF ;
+
+// -----------------------------------------------------------------------
+// COORDINATE RANGE VALIDATION
+// -----------------------------------------------------------------------
+
+// X coordinate validation
+#XValid := (#X_Coord >= DB102.CoordinateLimits.X_Min) AND (#X_Coord <= DB102.CoordinateLimits.X_Max) ;
+IF NOT #XValid THEN
+  #ErrorCode := 5002 ;                    // X coordinate out of range
+END_IF ;
+
+// Y coordinate validation
+#YValid := (#Y_Coord >= DB102.CoordinateLimits.Y_Min) AND (#Y_Coord <= DB102.CoordinateLimits.Y_Max) ;
+IF NOT #YValid THEN
+  #ErrorCode := 5003 ;                    // Y coordinate out of range
+END_IF ;
+
+// Z coordinate validation
+#ZValid := (#Z_Coord >= DB102.CoordinateLimits.Z_Min) AND (#Z_Coord <= DB102.CoordinateLimits.Z_Max) ;
+IF NOT #ZValid THEN
+  #ErrorCode := 5004 ;                    // Z coordinate out of range
+END_IF ;
+
+// -----------------------------------------------------------------------
+// ROTATION VALIDATION
+// -----------------------------------------------------------------------
+
+// RX rotation validation
+#RXValid := (#RX_Rot >= DB102.CoordinateLimits.RX_Min) AND (#RX_Rot <= DB102.CoordinateLimits.RX_Max) ;
+IF NOT #RXValid THEN
+  #ErrorCode := 5005 ;                    // RX rotation out of range
+END_IF ;
+
+// RY rotation validation
+#RYValid := (#RY_Rot >= DB102.CoordinateLimits.RY_Min) AND (#RY_Rot <= DB102.CoordinateLimits.RY_Max) ;
+IF NOT #RYValid THEN
+  #ErrorCode := 5006 ;                    // RY rotation out of range
+END_IF ;
+
+// RZ rotation validation
+#RZValid := (#RZ_Rot >= DB102.CoordinateLimits.RZ_Min) AND (#RZ_Rot <= DB102.CoordinateLimits.RZ_Max) ;
+IF NOT #RZValid THEN
+  #ErrorCode := 5007 ;                    // RZ rotation out of range
+END_IF ;
+
+// -----------------------------------------------------------------------
+// PARAMETER VALIDATION
+// -----------------------------------------------------------------------
+
+// Gripper command validation
+#GripperValid := (#Gripper >= 0) AND (#Gripper <= 2) ;
+IF NOT #GripperValid THEN
+  #ErrorCode := 5008 ;                    // Invalid gripper command
+END_IF ;
+
+// Speed validation
+#SpeedValid := (#Speed >= DB102.CoordinateLimits.Speed_Min) AND (#Speed <= DB102.CoordinateLimits.Speed_Max) ;
+IF NOT #SpeedValid THEN
+  #ErrorCode := 5009 ;                    // Speed out of range
+END_IF ;
+
+// -----------------------------------------------------------------------
+// WORKSPACE VALIDATION
+// -----------------------------------------------------------------------
+
+// Calculate distance from origin (safety check)
+#TempReal := DINT_TO_REAL(#X_Coord) ;
+#Distance := #TempReal * #TempReal ;
+#TempReal := DINT_TO_REAL(#Y_Coord) ;
+#Distance := #Distance + (#TempReal * #TempReal) ;
+#TempReal := DINT_TO_REAL(#Z_Coord) ;
+#Distance := #Distance + (#TempReal * #TempReal) ;
+#Distance := SQRT(#Distance) ;
+
+// Check if position is within robot workspace
+#WorkspaceValid := #Distance <= 2800.0 ;         // 2.8m maximum reach
+IF NOT #WorkspaceValid THEN
+  #ErrorCode := 5010 ;                    // Position outside workspace
+END_IF ;
+
+// -----------------------------------------------------------------------
+// AREA-SPECIFIC VALIDATION
+// -----------------------------------------------------------------------
+
+IF #Area = 1 THEN
+  // Area 1 specific validations
+  
+  // Check if position is in Area 1 workspace
+  IF (#X_Coord < -1000) OR (#X_Coord > 1000) THEN
+    #WarningCode := 6001 ;                // Position may be outside Area 1
+  END_IF ;
+  
+  IF (#Y_Coord < -1500) OR (#Y_Coord > 500) THEN
+    #WarningCode := 6002 ;                // Y position may be outside Area 1
+  END_IF ;
+  
+ELSIF #Area = 2 THEN
+  // Area 2 specific validations
+  
+  // Check if position is in Area 2 workspace
+  IF (#X_Coord < -1000) OR (#X_Coord > 1000) THEN
+    #WarningCode := 6003 ;                // Position may be outside Area 2
+  END_IF ;
+  
+  IF (#Y_Coord < -500) OR (#Y_Coord > 1500) THEN
+    #WarningCode := 6004 ;                // Y position may be outside Area 2
+  END_IF ;
+END_IF ;
+
+// -----------------------------------------------------------------------
+// COLLISION DETECTION (BASIC)
+// -----------------------------------------------------------------------
+
+// Check for potential collision with obstacles
+IF (#Z_Coord < 100) AND (#Distance > 1000.0) THEN
+  #WarningCode := 6005 ;                  // Low Z position at extended reach
+END_IF ;
+
+// Check for extreme orientations
+IF (ABS(#RX_Rot) > 9000) OR (ABS(#RY_Rot) > 9000) THEN
+  #WarningCode := 6006 ;                  // Extreme wrist orientation
+END_IF ;
+
+// -----------------------------------------------------------------------
+// FINAL VALIDATION RESULT
+// -----------------------------------------------------------------------
+
+// All validations must pass for valid result
+#Valid := #XValid AND #YValid AND #ZValid AND #RXValid AND #RYValid AND #RZValid AND #GripperValid AND #SpeedValid AND #WorkspaceValid ;
+
+// Update counters
+IF #Valid THEN
+  IF #WarningCode <> 0 THEN
+    #WarningCounter := #WarningCounter + 1 ;
+  END_IF ;
+ELSE
+  #ErrorCounter := #ErrorCounter + 1 ;
+END_IF ;
+
+// -----------------------------------------------------------------------
+// SPECIAL VALIDATION CASES
+// -----------------------------------------------------------------------
+
+// Check for duplicate coordinates (warning only)
+IF #Valid THEN
+  // Compare with existing coordinates in the same area
+  IF #Area = 1 THEN
+    FOR #SetNumber := 1 TO 10 DO
+      IF (DB102.Area1_CoordinateSets[#SetNumber].ValidationFlag = 1) AND
+         (DB102.Area1_CoordinateSets[#SetNumber].X_Position = #X_Coord) AND
+         (DB102.Area1_CoordinateSets[#SetNumber].Y_Position = #Y_Coord) AND
+         (DB102.Area1_CoordinateSets[#SetNumber].Z_Position = #Z_Coord) THEN
+        #WarningCode := 6007 ;            // Duplicate coordinates detected
+        EXIT ;
+      END_IF ;
+    END_FOR ;
+  ELSE
+    FOR #SetNumber := 1 TO 10 DO
+      IF (DB102.Area2_CoordinateSets[#SetNumber].ValidationFlag = 1) AND
+         (DB102.Area2_CoordinateSets[#SetNumber].X_Position = #X_Coord) AND
+         (DB102.Area2_CoordinateSets[#SetNumber].Y_Position = #Y_Coord) AND
+         (DB102.Area2_CoordinateSets[#SetNumber].Z_Position = #Z_Coord) THEN
+        #WarningCode := 6007 ;            // Duplicate coordinates detected
+        EXIT ;
+      END_IF ;
+    END_FOR ;
+  END_IF ;
+END_IF ;
+
+// -----------------------------------------------------------------------
+// VALIDATION STATISTICS UPDATE
+// -----------------------------------------------------------------------
+
+// Update system statistics
+IF #ValidationCounter MOD 100 = 0 THEN     // Every 100 validations
+  // Update success rate in system status
+  DB102.SystemStatus.SystemChecksum := DWORD_TO_DWORD(#ValidationCounter - #ErrorCounter) ;
+END_IF ;
+
+END_FUNCTION
+
+// =======================================================================
+// ERROR CODES REFERENCE
+// =======================================================================
+// 5001: Invalid area or set number
+// 5002: X coordinate out of range
+// 5003: Y coordinate out of range
+// 5004: Z coordinate out of range
+// 5005: RX rotation out of range
+// 5006: RY rotation out of range
+// 5007: RZ rotation out of range
+// 5008: Invalid gripper command
+// 5009: Speed out of range
+// 5010: Position outside workspace
+
+// =======================================================================
+// WARNING CODES REFERENCE
+// =======================================================================
+// 6001: Position may be outside Area 1
+// 6002: Y position may be outside Area 1
+// 6003: Position may be outside Area 2
+// 6004: Y position may be outside Area 2
+// 6005: Low Z position at extended reach
+// 6006: Extreme wrist orientation
+// 6007: Duplicate coordinates detected

@@ -1,0 +1,278 @@
+FUNCTION FC300 : VOID
+TITLE = 'Laptop Communication Handler'
+VERSION : 1.0
+
+VAR_INPUT
+  Enable : BOOL ;                         // Enable function
+  Reset : BOOL ;                          // Reset function
+END_VAR
+
+VAR_OUTPUT
+  Status : WORD ;                         // Function status
+  Error : BOOL ;                          // Error flag
+  ErrorCode : WORD ;                      // Error code
+END_VAR
+
+VAR_TEMP
+  LaptopCommand : WORD ;                  // Current laptop command
+  ProcessingComplete : BOOL ;             // Processing complete flag
+  DataValid : BOOL ;                      // Data validation result
+  TempChecksum : WORD ;                   // Temporary checksum
+  TempTimestamp : DWORD ;                 // Temporary timestamp
+  AreaNum : WORD ;                        // Area number
+  SetNum : WORD ;                         // Set number
+END_VAR
+
+BEGIN
+// =======================================================================
+// FUNCTION FC300 - LAPTOP COMMUNICATION HANDLER
+// =======================================================================
+// Description: Handles communication protocol with laptop
+// Called from: OB1 or OB35 (cyclic)
+// Execution: Non-blocking state machine
+// =======================================================================
+
+// Initialize outputs
+#Status := 0 ;
+#Error := FALSE ;
+#ErrorCode := 0 ;
+
+// Check if function is enabled
+IF NOT #Enable THEN
+  RETURN ;
+END_IF ;
+
+// Reset function if requested
+IF #Reset THEN
+  DB100.CommandWord := 0 ;
+  DB100.StatusWord := 0 ;
+  DB100.ErrorCode := 0 ;
+  RETURN ;
+END_IF ;
+
+// Read current command from laptop
+#LaptopCommand := DB100.CommandWord ;
+
+// -----------------------------------------------------------------------
+// COMMAND PROCESSING STATE MACHINE
+// -----------------------------------------------------------------------
+
+CASE #LaptopCommand OF
+
+  // No command - idle state
+  0:
+    DB100.StatusWord := 0 ;             // Idle status
+    #Status := 0 ;
+
+  // Write coordinate set command
+  1:
+    DB100.StatusWord := 2 ;             // Processing status
+    
+    // Validate area and set number
+    #AreaNum := DB100.AreaSelection ;
+    #SetNum := DB100.CoordinateSetNumber ;
+    
+    IF (#AreaNum >= 1) AND (#AreaNum <= 2) AND (#SetNum >= 1) AND (#SetNum <= 10) THEN
+      // Call coordinate validation
+      CALL FC303 (
+        Area := #AreaNum,
+        SetNumber := #SetNum,
+        X_Coord := DB100.X_Coordinate,
+        Y_Coord := DB100.Y_Coordinate,
+        Z_Coord := DB100.Z_Coordinate,
+        RX_Rot := DB100.RX_Rotation,
+        RY_Rot := DB100.RY_Rotation,
+        RZ_Rot := DB100.RZ_Rotation,
+        Valid := #DataValid,
+        ErrorCode := #ErrorCode
+      ) ;
+      
+      IF #DataValid THEN
+        // Store coordinate set
+        CALL FC302 (
+          Command := 1,                   // Write command
+          Area := #AreaNum,
+          SetNumber := #SetNum,
+          X_Coord := DB100.X_Coordinate,
+          Y_Coord := DB100.Y_Coordinate,
+          Z_Coord := DB100.Z_Coordinate,
+          RX_Rot := DB100.RX_Rotation,
+          RY_Rot := DB100.RY_Rotation,
+          RZ_Rot := DB100.RZ_Rotation,
+          GripperCmd := DB100.GripperStatus,
+          Speed := DB100.SpeedOverride,
+          Success := #ProcessingComplete,
+          ErrorCode := #ErrorCode
+        ) ;
+        
+        IF #ProcessingComplete THEN
+          DB100.StatusWord := 3 ;         // Completed successfully
+          DB100.CommandWord := 0 ;        // Clear command
+        ELSE
+          DB100.StatusWord := 4 ;         // Error occurred
+          DB100.ErrorCode := #ErrorCode ;
+        END_IF ;
+      ELSE
+        DB100.StatusWord := 9 ;           // Data validation failed
+        DB100.ErrorCode := #ErrorCode ;
+      END_IF ;
+    ELSE
+      DB100.StatusWord := 9 ;             // Data validation failed
+      DB100.ErrorCode := 1001 ;          // Invalid area/set number
+    END_IF ;
+
+  // Read coordinate set command
+  2:
+    DB100.StatusWord := 2 ;             // Processing status
+    
+    #AreaNum := DB100.AreaSelection ;
+    #SetNum := DB100.CoordinateSetNumber ;
+    
+    IF (#AreaNum >= 1) AND (#AreaNum <= 2) AND (#SetNum >= 1) AND (#SetNum <= 10) THEN
+      // Read coordinate set
+      CALL FC302 (
+        Command := 2,                   // Read command
+        Area := #AreaNum,
+        SetNumber := #SetNum,
+        X_Coord := DB100.X_Coordinate,
+        Y_Coord := DB100.Y_Coordinate,
+        Z_Coord := DB100.Z_Coordinate,
+        RX_Rot := DB100.RX_Rotation,
+        RY_Rot := DB100.RY_Rotation,
+        RZ_Rot := DB100.RZ_Rotation,
+        GripperCmd := DB100.GripperStatus,
+        Speed := DB100.SpeedOverride,
+        Success := #ProcessingComplete,
+        ErrorCode := #ErrorCode
+      ) ;
+      
+      IF #ProcessingComplete THEN
+        DB100.StatusWord := 3 ;         // Completed successfully
+        DB100.CommandWord := 0 ;        // Clear command
+      ELSE
+        DB100.StatusWord := 4 ;         // Error occurred
+        DB100.ErrorCode := #ErrorCode ;
+      END_IF ;
+    ELSE
+      DB100.StatusWord := 9 ;           // Data validation failed
+      DB100.ErrorCode := 1001 ;        // Invalid area/set number
+    END_IF ;
+
+  // Execute coordinate set command
+  3:
+    DB100.StatusWord := 2 ;             // Processing status
+    
+    #AreaNum := DB100.AreaSelection ;
+    #SetNum := DB100.CoordinateSetNumber ;
+    
+    // Check if robot is ready
+    IF DB101.RobotStatus = 0 OR DB101.RobotStatus = 9 THEN
+      // Send command to robot handler
+      CALL FC301 (
+        Command := 1,                   // Execute command
+        Area := #AreaNum,
+        SetNumber := #SetNum,
+        Enable := TRUE,
+        Reset := FALSE,
+        Success := #ProcessingComplete,
+        ErrorCode := #ErrorCode
+      ) ;
+      
+      IF #ProcessingComplete THEN
+        DB100.StatusWord := 3 ;         // Completed successfully
+        DB100.CommandWord := 0 ;        // Clear command
+      ELSE
+        DB100.StatusWord := 6 ;         // Busy
+      END_IF ;
+    ELSE
+      DB100.StatusWord := 7 ;           // Robot not ready
+      DB100.ErrorCode := 2001 ;         // Robot busy error
+    END_IF ;
+
+  // Get current position command
+  4:
+    DB100.StatusWord := 2 ;             // Processing status
+    
+    // Copy current position from robot interface
+    DB100.X_Coordinate := DB101.CurrentX ;
+    DB100.Y_Coordinate := DB101.CurrentY ;
+    DB100.Z_Coordinate := DB101.CurrentZ ;
+    DB100.RX_Rotation := DB101.CurrentRX ;
+    DB100.RY_Rotation := DB101.CurrentRY ;
+    DB100.RZ_Rotation := DB101.CurrentRZ ;
+    DB100.GripperStatus := DB101.GripperFeedback ;
+    
+    DB100.StatusWord := 3 ;             // Completed successfully
+    DB100.CommandWord := 0 ;            // Clear command
+
+  // Stop current motion command
+  5:
+    DB100.StatusWord := 2 ;             // Processing status
+    
+    // Send stop command to robot
+    CALL FC301 (
+      Command := 2,                     // Stop command
+      Area := 0,
+      SetNumber := 0,
+      Enable := TRUE,
+      Reset := FALSE,
+      Success := #ProcessingComplete,
+      ErrorCode := #ErrorCode
+    ) ;
+    
+    DB100.StatusWord := 3 ;             // Completed successfully
+    DB100.CommandWord := 0 ;            // Clear command
+
+  // Reset error command
+  6:
+    DB100.StatusWord := 2 ;             // Processing status
+    
+    // Reset all error flags
+    DB100.ErrorCode := 0 ;
+    DB101.RobotErrorCode := 0 ;
+    DB102.SystemStatus.ErrorCounter := 0 ;
+    
+    DB100.StatusWord := 3 ;             // Completed successfully
+    DB100.CommandWord := 0 ;            // Clear command
+
+  // Get system status command
+  7:
+    DB100.StatusWord := 2 ;             // Processing status
+    
+    // Return system status information
+    DB100.AreaSelection := DB102.SystemStatus.LastAccessedArea ;
+    DB100.CoordinateSetNumber := DB102.SystemStatus.LastAccessedSet ;
+    DB100.ErrorCode := DB102.SystemStatus.ErrorCounter ;
+    
+    DB100.StatusWord := 3 ;             // Completed successfully
+    DB100.CommandWord := 0 ;            // Clear command
+
+  // Default case - unknown command
+  ELSE:
+    DB100.StatusWord := 4 ;             // Error occurred
+    DB100.ErrorCode := 1000 ;           // Unknown command
+    DB100.CommandWord := 0 ;            // Clear command
+
+END_CASE ;
+
+// -----------------------------------------------------------------------
+// UPDATE TIMESTAMP AND STATUS
+// -----------------------------------------------------------------------
+
+IF DB100.StatusWord <> 0 THEN
+  // Update timestamp
+  CALL FC8 (
+    RET_VAL := INT#0
+  ) ;
+  
+  // Set function status
+  #Status := DB100.StatusWord ;
+  
+  // Set error flag if error occurred
+  IF DB100.StatusWord = 4 OR DB100.StatusWord = 9 THEN
+    #Error := TRUE ;
+    #ErrorCode := DB100.ErrorCode ;
+  END_IF ;
+END_IF ;
+
+END_FUNCTION
