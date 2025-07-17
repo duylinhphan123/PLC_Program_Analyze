@@ -1,109 +1,226 @@
 DATA_BLOCK "DB102_CoordinateStorage"
-TITLE = Coordinate Storage Buffer
+TITLE = 'Coordinate Storage Buffer'
 VERSION : 0.1
 
-STRUCT 
-   // Area 1 Coordinate Sets
-   Area1_Sets : ARRAY [1 .. 10] OF STRUCT
-      X_Coordinate : DINT ;                //X coordinate (mm)
-      Y_Coordinate : DINT ;                //Y coordinate (mm)
-      Z_Coordinate : DINT := L#500;        //Z coordinate (mm)
-      RX_Rotation : INT ;                  //RX rotation (degrees*100)
-      RY_Rotation : INT ;                  //RY rotation (degrees*100)
-      RZ_Rotation : INT ;                  //RZ rotation (degrees*100)
-      Gripper_Command : INT ;              //Gripper command
-      Speed_Override : INT := 100;         //Speed override (10-100%)
-      Valid_Flag : BOOL ;                  //Data valid flag
-      Reserved : ARRAY [1 .. 3] OF WORD ; //Reserved
-   END_STRUCT ;
+STRUCT
+   // Area 1 Coordinate Sets (10 sets)
+   Area1_Set1_X : DINT ;                   // X coordinate (mm)
+   Area1_Set1_Y : DINT ;                   // Y coordinate (mm)
+   Area1_Set1_Z : DINT := L#500;           // Z coordinate (mm)
+   Area1_Set1_RX : INT ;                   // RX rotation (degrees*100)
+   Area1_Set1_RY : INT ;                   // RY rotation (degrees*100)
+   Area1_Set1_RZ : INT ;                   // RZ rotation (degrees*100)
+   Area1_Set1_Gripper : INT ;              // Gripper command
+   Area1_Set1_Speed : INT := 100;          // Speed override (10-100%)
+   Area1_Set1_Valid : BOOL ;               // Data valid flag
+   Area1_Set1_Reserved : WORD ;            // Reserved
    
-   // Area 2 Coordinate Sets
-   Area2_Sets : ARRAY [1 .. 10] OF STRUCT
-      X_Coordinate : DINT ;                //X coordinate (mm)
-      Y_Coordinate : DINT ;                //Y coordinate (mm)
-      Z_Coordinate : DINT := L#500;        //Z coordinate (mm)
-      RX_Rotation : INT ;                  //RX rotation (degrees*100)
-      RY_Rotation : INT ;                  //RY rotation (degrees*100)
-      RZ_Rotation : INT ;                  //RZ rotation (degrees*100)
-      Gripper_Command : INT ;              //Gripper command
-      Speed_Override : INT := 100;         //Speed override (10-100%)
-      Valid_Flag : BOOL ;                  //Data valid flag
-      Reserved : ARRAY [1 .. 3] OF WORD ; //Reserved
-   END_STRUCT ;
+   Area1_Set2_X : DINT ;                   // X coordinate (mm)
+   Area1_Set2_Y : DINT ;                   // Y coordinate (mm)
+   Area1_Set2_Z : DINT := L#500;           // Z coordinate (mm)
+   Area1_Set2_RX : INT ;                   // RX rotation (degrees*100)
+   Area1_Set2_RY : INT ;                   // RY rotation (degrees*100)
+   Area1_Set2_RZ : INT ;                   // RZ rotation (degrees*100)
+   Area1_Set2_Gripper : INT ;              // Gripper command
+   Area1_Set2_Speed : INT := 100;          // Speed override (10-100%)
+   Area1_Set2_Valid : BOOL ;               // Data valid flag
+   Area1_Set2_Reserved : WORD ;            // Reserved
+   
+   Area1_Set3_X : DINT ;                   // X coordinate (mm)
+   Area1_Set3_Y : DINT ;                   // Y coordinate (mm)
+   Area1_Set3_Z : DINT := L#500;           // Z coordinate (mm)
+   Area1_Set3_RX : INT ;                   // RX rotation (degrees*100)
+   Area1_Set3_RY : INT ;                   // RY rotation (degrees*100)
+   Area1_Set3_RZ : INT ;                   // RZ rotation (degrees*100)
+   Area1_Set3_Gripper : INT ;              // Gripper command
+   Area1_Set3_Speed : INT := 100;          // Speed override (10-100%)
+   Area1_Set3_Valid : BOOL ;               // Data valid flag
+   Area1_Set3_Reserved : WORD ;            // Reserved
+   
+   Area1_Set4_X : DINT ;                   // X coordinate (mm)
+   Area1_Set4_Y : DINT ;                   // Y coordinate (mm)
+   Area1_Set4_Z : DINT := L#500;           // Z coordinate (mm)
+   Area1_Set4_RX : INT ;                   // RX rotation (degrees*100)
+   Area1_Set4_RY : INT ;                   // RY rotation (degrees*100)
+   Area1_Set4_RZ : INT ;                   // RZ rotation (degrees*100)
+   Area1_Set4_Gripper : INT ;              // Gripper command
+   Area1_Set4_Speed : INT := 100;          // Speed override (10-100%)
+   Area1_Set4_Valid : BOOL ;               // Data valid flag
+   Area1_Set4_Reserved : WORD ;            // Reserved
+   
+   Area1_Set5_X : DINT ;                   // X coordinate (mm)
+   Area1_Set5_Y : DINT ;                   // Y coordinate (mm)
+   Area1_Set5_Z : DINT := L#500;           // Z coordinate (mm)
+   Area1_Set5_RX : INT ;                   // RX rotation (degrees*100)
+   Area1_Set5_RY : INT ;                   // RY rotation (degrees*100)
+   Area1_Set5_RZ : INT ;                   // RZ rotation (degrees*100)
+   Area1_Set5_Gripper : INT ;              // Gripper command
+   Area1_Set5_Speed : INT := 100;          // Speed override (10-100%)
+   Area1_Set5_Valid : BOOL ;               // Data valid flag
+   Area1_Set5_Reserved : WORD ;            // Reserved
+   
+   // Area 2 Coordinate Sets (5 sets for demonstration)
+   Area2_Set1_X : DINT ;                   // X coordinate (mm)
+   Area2_Set1_Y : DINT ;                   // Y coordinate (mm)
+   Area2_Set1_Z : DINT := L#500;           // Z coordinate (mm)
+   Area2_Set1_RX : INT ;                   // RX rotation (degrees*100)
+   Area2_Set1_RY : INT ;                   // RY rotation (degrees*100)
+   Area2_Set1_RZ : INT ;                   // RZ rotation (degrees*100)
+   Area2_Set1_Gripper : INT ;              // Gripper command
+   Area2_Set1_Speed : INT := 100;          // Speed override (10-100%)
+   Area2_Set1_Valid : BOOL ;               // Data valid flag
+   Area2_Set1_Reserved : WORD ;            // Reserved
+   
+   Area2_Set2_X : DINT ;                   // X coordinate (mm)
+   Area2_Set2_Y : DINT ;                   // Y coordinate (mm)
+   Area2_Set2_Z : DINT := L#500;           // Z coordinate (mm)
+   Area2_Set2_RX : INT ;                   // RX rotation (degrees*100)
+   Area2_Set2_RY : INT ;                   // RY rotation (degrees*100)
+   Area2_Set2_RZ : INT ;                   // RZ rotation (degrees*100)
+   Area2_Set2_Gripper : INT ;              // Gripper command
+   Area2_Set2_Speed : INT := 100;          // Speed override (10-100%)
+   Area2_Set2_Valid : BOOL ;               // Data valid flag
+   Area2_Set2_Reserved : WORD ;            // Reserved
+   
+   Area2_Set3_X : DINT ;                   // X coordinate (mm)
+   Area2_Set3_Y : DINT ;                   // Y coordinate (mm)
+   Area2_Set3_Z : DINT := L#500;           // Z coordinate (mm)
+   Area2_Set3_RX : INT ;                   // RX rotation (degrees*100)
+   Area2_Set3_RY : INT ;                   // RY rotation (degrees*100)
+   Area2_Set3_RZ : INT ;                   // RZ rotation (degrees*100)
+   Area2_Set3_Gripper : INT ;              // Gripper command
+   Area2_Set3_Speed : INT := 100;          // Speed override (10-100%)
+   Area2_Set3_Valid : BOOL ;               // Data valid flag
+   Area2_Set3_Reserved : WORD ;            // Reserved
    
    // System Status
-   Total_Sets : INT ;                      //Total coordinate sets
-   Active_Area : INT := 1;                 //Current active area
-   Last_Updated : TIME ;                   //Last update time
-   Storage_Status : WORD ;                 //Storage status
-   Reserved_System : ARRAY [1 .. 10] OF WORD ; //Reserved
-END_STRUCT ;
-
-  // SYSTEM STATUS SECTION (Words 400-449)
-  SystemStatus : STRUCT
-    Area1_ActiveSets : WORD ;             // Active sets bitmask Area 1
-    Area2_ActiveSets : WORD ;             // Active sets bitmask Area 2
-    Area1_ValidSets : WORD ;              // Valid sets bitmask Area 1
-    Area2_ValidSets : WORD ;              // Valid sets bitmask Area 2
-    LastAccessedArea : WORD ;             // Last accessed area
-    LastAccessedSet : WORD ;              // Last accessed set
-    TotalValidSets : WORD ;               // Total valid sets count
-    SystemChecksum : DWORD ;              // System data checksum
-    LastUpdateTime : DWORD ;              // Last update timestamp
-    AccessCounter : DWORD ;               // Total access counter
-    ErrorCounter : DWORD ;                // Error counter
-    Reserved : ARRAY[1..20] OF WORD ;     // Reserved for expansion
-  END_STRUCT ;
-
-  // COORDINATE LIMITS (Words 450-499)
-  CoordinateLimits : STRUCT
-    X_Min : DINT ;                        // X minimum limit
-    X_Max : DINT ;                        // X maximum limit
-    Y_Min : DINT ;                        // Y minimum limit
-    Y_Max : DINT ;                        // Y maximum limit
-    Z_Min : DINT ;                        // Z minimum limit
-    Z_Max : DINT ;                        // Z maximum limit
-    RX_Min : INT ;                        // RX minimum limit
-    RX_Max : INT ;                        // RX maximum limit
-    RY_Min : INT ;                        // RY minimum limit
-    RY_Max : INT ;                        // RY maximum limit
-    RZ_Min : INT ;                        // RZ minimum limit
-    RZ_Max : INT ;                        // RZ maximum limit
-    Speed_Min : WORD ;                    // Speed minimum %
-    Speed_Max : WORD ;                    // Speed maximum %
-    Reserved : ARRAY[1..10] OF WORD ;     // Reserved
-  END_STRUCT ;
-
+   Total_Sets : INT ;                      // Total coordinate sets
+   Active_Area : INT := 1;                 // Current active area (1 or 2)
+   Last_Updated : TIME ;                   // Last update time
+   Storage_Status : WORD ;                 // Storage status word
+   
+   // System Status Details
+   Area1_ActiveSets : WORD ;               // Active sets bitmask Area 1
+   Area2_ActiveSets : WORD ;               // Active sets bitmask Area 2
+   Area1_ValidSets : WORD ;                // Valid sets bitmask Area 1
+   Area2_ValidSets : WORD ;                // Valid sets bitmask Area 2
+   LastAccessedArea : WORD ;               // Last accessed area
+   LastAccessedSet : WORD ;                // Last accessed set
+   TotalValidSets : WORD ;                 // Total valid sets count
+   SystemChecksum : DWORD ;                // System data checksum
+   LastUpdateTime : DWORD ;                // Last update timestamp
+   AccessCounter : DWORD ;                 // Total access counter
+   ErrorCounter : DWORD ;                  // Error counter
+   
+   // Coordinate Limits
+   X_Min : DINT := L#-2000;                // X minimum limit (mm)
+   X_Max : DINT := L#2000;                 // X maximum limit (mm)
+   Y_Min : DINT := L#-2000;                // Y minimum limit (mm)
+   Y_Max : DINT := L#2000;                 // Y maximum limit (mm)
+   Z_Min : DINT := L#100;                  // Z minimum limit (mm)
+   Z_Max : DINT := L#1500;                 // Z maximum limit (mm)
+   RX_Min : INT := -18000;                 // RX minimum limit (degrees*100)
+   RX_Max : INT := 18000;                  // RX maximum limit (degrees*100)
+   RY_Min : INT := -18000;                 // RY minimum limit (degrees*100)
+   RY_Max : INT := 18000;                  // RY maximum limit (degrees*100)
+   RZ_Min : INT := -32000;                 // RZ minimum limit (degrees*100)
+   RZ_Max : INT := 32000;                  // RZ maximum limit (degrees*100)
+   Speed_Min : WORD := W#16#A;             // Speed minimum 10%
+   Speed_Max : WORD := W#16#64;            // Speed maximum 100%
+   
+   // Reserved for future expansion
+   Reserved1 : WORD ;
+   Reserved2 : WORD ;
+   Reserved3 : WORD ;
+   Reserved4 : WORD ;
+   Reserved5 : WORD ;
+   Reserved6 : WORD ;
+   Reserved7 : WORD ;
+   Reserved8 : WORD ;
+   Reserved9 : WORD ;
+   Reserved10 : WORD ;
 END_STRUCT
 
 BEGIN
-   // Initialize all coordinate sets
-   Total_Sets := 0; 
-   Active_Area := 1; 
-   Last_Updated := T#0MS; 
-   Storage_Status := W#16#0; 
-   Reserved_System[1] := W#16#0; 
-   Reserved_System[2] := W#16#0; 
-   Reserved_System[3] := W#16#0; 
-   Reserved_System[4] := W#16#0; 
-   Reserved_System[5] := W#16#0; 
-   Reserved_System[6] := W#16#0; 
-   Reserved_System[7] := W#16#0; 
-   Reserved_System[8] := W#16#0; 
-   Reserved_System[9] := W#16#0; 
-   Reserved_System[10] := W#16#0; 
+   // Initialize system status
+   Total_Sets := 0;
+   Active_Area := 1;
+   Last_Updated := T#0MS;
+   Storage_Status := W#16#0;
+   
+   // Initialize status details
+   Area1_ActiveSets := W#16#0;
+   Area2_ActiveSets := W#16#0;
+   Area1_ValidSets := W#16#0;
+   Area2_ValidSets := W#16#0;
+   LastAccessedArea := W#16#1;
+   LastAccessedSet := W#16#0;
+   TotalValidSets := W#16#0;
+   SystemChecksum := DW#16#0;
+   LastUpdateTime := DW#16#0;
+   AccessCounter := DW#16#0;
+   ErrorCounter := DW#16#0;
+   
+   // Initialize reserved fields
+   Reserved1 := W#16#0;
+   Reserved2 := W#16#0;
+   Reserved3 := W#16#0;
+   Reserved4 := W#16#0;
+   Reserved5 := W#16#0;
+   Reserved6 := W#16#0;
+   Reserved7 := W#16#0;
+   Reserved8 := W#16#0;
+   Reserved9 := W#16#0;
+   Reserved10 := W#16#0;
 END_DATA_BLOCK
 
 // =======================================================================
-// VALIDATION FLAGS (ValidationFlag field)
+// DB102 COORDINATE STORAGE BUFFER DOCUMENTATION
 // =======================================================================
-// 0x0000 = Invalid/Empty
-// 0x0001 = Valid and ready
-// 0x0002 = Valid but needs verification
-// 0x0003 = Valid but modified
-// 0x0004 = Invalid - out of range
-// 0x0005 = Invalid - checksum error
-// 0x0006 = Invalid - incomplete data
-// 0x0007 = Locked for editing
-// 0x0008 = Reserved
-// 0x0009 = Backup copy
+//
+// PURPOSE: Store coordinate sets for both palletizing areas
+// VERSION: 0.1
+// AUTHOR: PLC Program Analysis Project
+// DATE: 2025-07-17
+//
+// STRUCTURE:
+// - Area 1 Coordinate Sets (5 sets): DBW 0-198
+// - Area 2 Coordinate Sets (3 sets): DBW 200-278
+// - System Status: DBW 280-320
+// - Coordinate Limits: DBW 322-362
+// - Reserved: DBW 364-383
+//
+// COORDINATE FORMAT:
+// - X,Y,Z coordinates in mm (DINT format)
+// - RX,RY,RZ rotations in degrees*100 (INT format)
+// - Speed override 10-100% (INT format)
+// - Valid flag indicates data integrity (BOOL)
+//
+// VALIDATION FLAGS:
+// - FALSE (0) = Invalid/Empty coordinate set
+// - TRUE (1) = Valid and ready for use
+//
+// AREA SELECTION:
+// - Active_Area = 1: Area 1 is active
+// - Active_Area = 2: Area 2 is active
+//
+// COORDINATE LIMITS:
+// - X: -2000 to +2000 mm
+// - Y: -2000 to +2000 mm  
+// - Z: 100 to 1500 mm
+// - RX,RY: -180.00 to +180.00 degrees
+// - RZ: -320.00 to +320.00 degrees (limited by INT range)
+// - Speed: 10% to 100%
+//
+// USAGE EXAMPLE:
+// - Write coordinates to Area1_Set1_X, Area1_Set1_Y, etc.
+// - Set Area1_Set1_Valid := TRUE when data is ready
+// - Monitor Storage_Status for system health
+// - Use AccessCounter to track usage statistics
+//
+// ERROR HANDLING:
+// - ErrorCounter increments on validation failures
+// - SystemChecksum provides data integrity verification
+// - Reserved fields available for future expansion
+//
+// =======================================================================
