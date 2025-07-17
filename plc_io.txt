@@ -1,0 +1,149 @@
+Chào bạn, dựa trên bộ bản vẽ kỹ thuật bạn đã cung cấp, dưới đây là danh sách chi tiết các ngõ vào và ngõ ra của PLC cho hệ thống Robot Palletizer, được tổng hợp từ các trang 14 đến 21.
+
+NGÕ VÀO PLC (PLC INPUTS)
+
+Ngõ vào (Digital Inputs - DI) được sử dụng để đọc trạng thái của các nút nhấn, công tắc, cảm biến và các tín hiệu an toàn.
+
+Module -PLC1 (Thẻ DI 6ES7 321-7BH01-0ABO, trang 14)
+
+I 0.0: -SBH3 - Nút nhấn Reset Lỗi (Fault Reset).
+
+I 0.1: -KA1 - Tín hiệu Dừng khẩn cấp (Emergency-stop Signal).
+
+I 0.2: -QF20 - Tín hiệu từ Aptomat bảo vệ động cơ (Motor Circuit Breaker).
+
+I 0.3: (Dự phòng - Spare).
+
+I 0.4: -SBH1 - Nút nhấn Khởi động (Start).
+
+I 0.5: -SBH2 - Nút nhấn Dừng (Stop).
+
+I 0.6: -SB4 - Nút nhấn Nâng pallet (Pallet Up).
+
+I 0.7: -SB5 - Nút nhấn Hạ pallet (Pallet Down).
+
+I 1.0: -SQ01 - Công tắc giới hạn Cửa an toàn 1 đã đóng (Safety Door 1 Closed).
+
+I 1.1: -SQ02 - Công tắc giới hạn Cửa an toàn 2 đã đóng (Safety Door 2 Closed).
+
+I 1.2: (Dự phòng - Spare).
+
+I 1.3: (Dự phòng - Spare).
+
+I 1.4: -SQ4 - Cảm biến định vị Pallet ở vị trí dưới (Pallet Locating Device Lower pos.).
+
+I 1.5: (Dự phòng - Spare).
+
+I 1.6: (Dự phòng - Spare).
+
+I 1.7: -SG16A/B/AE/BE - Tín hiệu từ Mắt thần an toàn (Safety Photocell).
+
+Module -PLC2 (Thẻ DI 6ES7 321-7BH01-0ABO, trang 16)
+
+I 4.0: -SG1 - Cảm biến vị trí băng tải con lăn (Roller Conveyor pos.).
+
+I 4.1: -SG2 - Cảm biến vị trí băng tải ép phẳng (Flattening Conveyor pos.).
+
+I 4.2: -SG3 - Cảm biến vị trí băng tải trữ (Pool Conveyor pos.).
+
+I 4.3: -SG4 - Cảm biến vị trí băng tải xếp lớp 2 (Patterning Conveyor 2 pos.).
+
+I 4.4: -SG5 - Cảm biến vị trí băng tải xếp lớp 1 (Patterning Conveyor 1 pos.).
+
+I 4.5: -SG6 - Cảm biến Không đủ pallet (Pallet Insufficient).
+
+I 4.6: -SG7 - Cảm biến vị trí vận chuyển Pallet (Pallet Conveying pos.).
+
+I 4.7: -SG8 - Cảm biến Pallet đang chờ (Pallet Waiting pos.).
+
+I 5.0: -SG9 - Cảm biến đầu vào băng tải đã tải pallet (Loaded-pallet Conveyor Inlet).
+
+I 5.1: -SQ1 - Cảm biến vị trí trên của bàn pallet (Pallet Table Upper pos.).
+
+I 5.2: -SQ2 - Cảm biến vị trí giữa của bàn pallet (Pallet Table Middle pos.).
+
+I 5.3: -SQ3 - Cảm biến vị trí băng tải đã tải pallet 1 (Loaded-pallet Conveyor 1 pos.).
+
+I 5.4: -SQ5 - Cảm biến vị trí băng tải đã tải pallet 2 (Loaded-pallet Conveyor 2 pos.).
+
+I 5.5: -SQ6 - Cảm biến vị trí băng tải đã tải pallet 3 (Loaded-pallet Conveyor 3 pos.).
+
+I 5.6: -SQ7 - Cảm biến vị trí băng tải đã tải pallet 4 (Loaded-pallet Conveyor 4 pos.).
+
+I 5.7: -SP1 - Công tắc phát hiện áp suất khí nén (Air-pressure detecting switch).
+
+Ghi chú: Các module -PLC4 (trang 15) và -PLC5 (trang 17) có các ngõ vào tương tự như -PLC1 và -PLC2, có thể dành cho một tủ điện hoặc hệ thống thứ hai.
+
+NGÕ RA PLC (PLC OUTPUTS)
+
+Ngõ ra (Digital Outputs - DO) được sử dụng để điều khiển các cuộn hút của contactor (khởi động động cơ), van điện từ, đèn báo và các thiết bị chấp hành khác.
+
+Module -PLC11 (Thẻ DO 6ES7 322-8BH01-0ABO, trang 18)
+
+Q 32.0: -KA2 - Đèn và còi báo động (Sound and Light Alarm).
+
+Q 32.1: Tín hiệu chọn phân mạng 1 (Network Segment SEL 1).
+
+Q 32.2: Tín hiệu chọn phân mạng 2 (Network Segment SEL 2).
+
+Q 32.3: -KAS - Đèn báo đang chạy (Running Indicator Light).
+
+Q 32.4: -KA6 - Tín hiệu trạng thái đang dừng (Stopping).
+
+Q 32.5: -KA3 - Đèn báo lỗi (Fault Indicator Light).
+
+Q 32.6: Tín hiệu hệ thống sẵn sàng (System Stand by).
+
+Q 32.7: (Dự phòng - Spare).
+
+Q 33.0: -KM20 - Điều khiển mạch Gia nhiệt & Hút ẩm (Heating & Dehumidification).
+
+Q 33.1: -KM1 - Điều khiển Contactor băng tải con lăn (Roller Conveyor).
+
+Q 33.2: -KM5 - Điều khiển Contactor băng tải xếp lớp 2 (Patterning Conveyor 2).
+
+Q 33.3: -KM6 - Điều khiển Contactor băng tải xếp lớp 1 (Patterning Conveyor 1).
+
+Q 33.4: (Dự phòng - Spare).
+
+Q 33.5: (Dự phòng - Spare).
+
+Q 33.6: (Dự phòng - Spare).
+
+Q 33.7: -A1.1 (Dự phòng - Spare).
+
+Module -PLC12 (Thẻ DO 6ES7 322-8BH01-0ABO, trang 20)
+
+Q 36.0: -KM2 - Điều khiển Contactor máy ép phẳng (Flattener).
+
+Q 36.1: -KM3 - Điều khiển Contactor băng tải ép phẳng (Flattening Conveyor).
+
+Q 36.2: -KM4 - Điều khiển Contactor băng tải trữ (Pool Conveyor).
+
+Q 36.3: (Dự phòng - Spare).
+
+Q 36.4: -KM7 - Điều khiển Contactor băng tải pallet (Pallet Conveyor).
+
+Q 36.5: -KM8 - Điều khiển Contactor băng tải đã tải pallet 1 (Loaded-pallet Conveyor 1).
+
+Q 36.6: -KM9 - Điều khiển Contactor băng tải đã tải pallet 2 (Loaded-pallet Conveyor 2).
+
+Q 36.7: -KM10 - Điều khiển Contactor băng tải đã tải pallet 3 (Loaded-pallet Conveyor 3).
+
+Q 37.0: -YV1 - Điều khiển Van điện từ Bàn pallet (Pallet Table).
+
+Q 37.1: -YV2 - Điều khiển Van điện từ Càng nâng pallet (Pallet Fork).
+
+Q 37.2: -YV3 - Điều khiển Van điện từ Thiết bị định vị pallet (Pallet Locating Device).
+
+Q 37.3: Tín hiệu điều khiển tay gắp 1 (Manipulator 1).
+
+Q 37.4: Tín hiệu điều khiển tay gắp 2 (Manipulator 2).
+
+Q 37.5: (Dự phòng - Spare).
+
+Q 37.6: (Dự phòng - Spare).
+
+Q 37.7: (Dự phòng - Spare).
+
+Ghi chú: Các module -PLC14 (trang 19) và -PLC15 (trang 21) có các ngõ ra tương tự như -PLC11 và -PLC12, có thể dành cho một tủ điện hoặc hệ thống thứ hai.

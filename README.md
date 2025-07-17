@@ -20,6 +20,7 @@ PLC_Program_Analyze/
 ├── main_signal_flow_detail.txt        # Sơ đồ luồng chi tiết
 ├── coordinate_exchange_solution.txt   # Giải pháp trao đổi tọa độ
 ├── simulation_solution.txt            # Giải pháp mô phỏng Robot Studio
+├── plc_io.txt                        # Mapping chi tiết I/O PLC (Digital Inputs/Outputs)
 ├── DB100.asc                         # Data Block 100 export file
 ├── backup/                           # Thư mục backup tự động
 ├── guide/                            # Hướng dẫn cấu hình và AWL files
@@ -108,6 +109,27 @@ source_plc_simulation/
 4. **Position Control:** FC53/FC63
 5. **Safety Interlocks:** FC54/FC64
 6. **Data Logging:** FC55/FC65
+
+### 🔌 Cấu hình I/O PLC
+**File:** `plc_io.txt`
+
+**Digital Inputs (24 channels):**
+- **I0.0-I0.7:** Controls & Safety (Start/Stop, Emergency Stop, Reset, Pallet Up/Down)
+- **I1.0-I1.7:** Safety Systems (Safety Doors, Pallet Locating, Safety Photocells)
+- **I4.0-I4.7:** Conveyor Sensors (Roller, Flattening, Pool, Patterning 1&2, Pallet positions)
+- **I5.0-I5.7:** System Status (Loaded-pallet positions, Pallet Table positions, Air pressure)
+
+**Digital Outputs (24 channels):**
+- **Q32.0-Q32.7:** Alarms & Status (Sound/Light alarm, Network control, Status indicators)
+- **Q33.0-Q33.7:** Conveyor Motors (Roller, Patterning 1&2, Heating/Dehumidification)
+- **Q36.0-Q36.7:** Conveyor Control (Flattener, Pool, Pallet, Loaded-pallet 1-3)
+- **Q37.0-Q37.7:** Pneumatic Control (Pallet Table, Fork, Locating Device, Manipulators)
+
+**Hardware Modules:**
+- **-PLC1/-PLC4:** DI modules 6ES7 321-7BH01-0ABO
+- **-PLC2/-PLC5:** DI modules 6ES7 321-7BH01-0ABO  
+- **-PLC11/-PLC14:** DO modules 6ES7 322-8BH01-0ABO
+- **-PLC12/-PLC15:** DO modules 6ES7 322-8BH01-0ABO
 
 ### 🔄 Giải pháp trao đổi tọa độ
 **File:** `coordinate_exchange_solution.txt`
@@ -225,6 +247,12 @@ source_plc_simulation/
 - **Dual Area Control:** 2 khu vực palletizing độc lập
 - **Robot Integration:** ABB IRC5 qua PROFIBUS-DP
 - **Data Integrity:** Handshake protocol và error handling
+- **I/O Configuration:** 
+  - Digital Inputs: 24 channels (I0.0-I5.7)
+  - Digital Outputs: 24 channels (Q32.0-Q37.7)
+  - Safety Systems: Emergency stops, safety doors, photocells
+  - Conveyor Control: 10 different conveyor systems
+  - Pneumatic Control: Solenoid valves cho pallet table, fork, locating device
 
 ### 📡 Giao tiếp
 - **Laptop ↔ PLC:** Ethernet TCP/IP, S7 Protocol (Port 102)
@@ -426,17 +454,65 @@ Slot 2: CPU 412-3H
 
 #### I/O Configuration
 ```
-Area 1 Inputs:
-- I0.0-I0.7: Emergency stops & safety
-- I1.0-I1.7: Conveyor sensors
-- I4.0-I4.7: Robot status
-- I64.0-I64.7: Robot communication
+Digital Inputs (24 channels):
+I0.0: -SBH3 Fault Reset
+I0.1: -KA1 Emergency Stop Signal  
+I0.2: -QF20 Motor Circuit Breaker
+I0.4: -SBH1 Start Button
+I0.5: -SBH2 Stop Button
+I0.6: -SB4 Pallet Up Button
+I0.7: -SB5 Pallet Down Button
 
-Area 1 Outputs:
-- Q32.0-Q32.7: Conveyor control
-- Q36.0-Q36.7: Robot commands
-- Q64.0-Q64.7: Robot communication
-- Q65.0-Q65.7: Status lamps
+I1.0: -SQ01 Safety Door 1 Closed
+I1.1: -SQ02 Safety Door 2 Closed
+I1.4: -SQ4 Pallet Locating Device Lower pos.
+I1.7: -SG16A/B/AE/BE Safety Photocell
+
+I4.0: -SG1 Roller Conveyor pos.
+I4.1: -SG2 Flattening Conveyor pos.
+I4.2: -SG3 Pool Conveyor pos.
+I4.3: -SG4 Patterning Conveyor 2 pos.
+I4.4: -SG5 Patterning Conveyor 1 pos.
+I4.5: -SG6 Pallet Insufficient
+I4.6: -SG7 Pallet Conveying pos.
+I4.7: -SG8 Pallet Waiting pos.
+
+I5.0: -SG9 Loaded-pallet Conveyor Inlet
+I5.1: -SQ1 Pallet Table Upper pos.
+I5.2: -SQ2 Pallet Table Middle pos.
+I5.3: -SQ3 Loaded-pallet Conveyor 1 pos.
+I5.4: -SQ5 Loaded-pallet Conveyor 2 pos.
+I5.5: -SQ6 Loaded-pallet Conveyor 3 pos.
+I5.6: -SQ7 Loaded-pallet Conveyor 4 pos.
+I5.7: -SP1 Air-pressure detecting switch
+
+Digital Outputs (24 channels):
+Q32.0: -KA2 Sound and Light Alarm
+Q32.1: Network Segment SEL 1
+Q32.2: Network Segment SEL 2
+Q32.3: -KAS Running Indicator Light
+Q32.4: -KA6 Stopping Status Signal
+Q32.5: -KA3 Fault Indicator Light
+Q32.6: System Stand by Signal
+
+Q33.0: -KM20 Heating & Dehumidification
+Q33.1: -KM1 Roller Conveyor
+Q33.2: -KM5 Patterning Conveyor 2
+Q33.3: -KM6 Patterning Conveyor 1
+
+Q36.0: -KM2 Flattener
+Q36.1: -KM3 Flattening Conveyor
+Q36.2: -KM4 Pool Conveyor
+Q36.4: -KM7 Pallet Conveyor
+Q36.5: -KM8 Loaded-pallet Conveyor 1
+Q36.6: -KM9 Loaded-pallet Conveyor 2
+Q36.7: -KM10 Loaded-pallet Conveyor 3
+
+Q37.0: -YV1 Pallet Table Solenoid Valve
+Q37.1: -YV2 Pallet Fork Solenoid Valve
+Q37.2: -YV3 Pallet Locating Device Solenoid Valve
+Q37.3: Manipulator 1 Control Signal
+Q37.4: Manipulator 2 Control Signal
 ```
 
 ### 🔧 Cấu hình Simulation
@@ -577,6 +653,7 @@ Communication Issues:
 - `main_signal_flow_detail.txt` - Sơ đồ luồng chi tiết
 - `coordinate_exchange_solution.txt` - Giải pháp trao đổi tọa độ
 - `simulation_solution.txt` - Giải pháp mô phỏng Robot Studio
+- `plc_io.txt` - Mapping chi tiết I/O PLC (Digital Inputs/Outputs)
 - `DB100.asc` - Data Block 100 export file
 - `guide/data_block_properties.txt` - Hướng dẫn cấu hình Data Block
 - `guide/DB100_CoordinateExchange.awl` - AWL definition cho DB100
@@ -612,6 +689,14 @@ Tất cả files được backup tự động trong thư mục `backup/` với t
 ---
 
 ## Changelog
+
+### v1.1 (17/07/2025)
+- ✅ Thêm file `plc_io.txt` với mapping chi tiết I/O PLC
+- ✅ Cập nhật README.md với thông tin I/O configuration
+- ✅ Bổ sung 24 digital inputs và 24 digital outputs
+- ✅ Thêm thông tin hardware modules (6ES7 321/322)
+- ✅ Cập nhật hướng dẫn với I/O addresses chính xác
+- ✅ Hoàn thiện documentation với safety systems
 
 ### v1.0 (17/07/2025)
 - ✅ Hoàn thành phân tích STL program (26,495 dòng)
