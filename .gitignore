@@ -35,3 +35,9 @@ Icon?
 *.s7l
 *.db
 *.plc
+
+# Backup directories
+backup/
+backup_*/
+backup_all_*/
+backup_main_*/

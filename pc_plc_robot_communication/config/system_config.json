@@ -1,0 +1,229 @@
+{
+  "plc_communication": {
+    "ip_address": "192.168.1.100",
+    "rack": 0,
+    "slot": 2,
+    "port": 102,
+    "timeout": 5.0,
+    "retry_count": 3,
+    "retry_delay": 1.0,
+    "connection_check_interval": 10.0
+  },
+  "data_blocks": {
+    "db100": {
+      "name": "Laptop Interface",
+      "number": 100,
+      "size": 100,
+      "description": "Communication interface for laptop commands"
+    },
+    "db101": {
+      "name": "Robot Interface",
+      "number": 101,
+      "size": 100,
+      "description": "Communication interface for robot feedback"
+    },
+    "db102": {
+      "name": "Coordinate Storage",
+      "number": 102,
+      "size": 500,
+      "description": "Storage for coordinate sets"
+    }
+  },
+  "coordinate_limits": {
+    "global": {
+      "x_min": -2000,
+      "x_max": 2000,
+      "y_min": -2000,
+      "y_max": 2000,
+      "z_min": 0,
+      "z_max": 1000
+    },
+    "area_1": {
+      "name": "Palletizing Area 1",
+      "x_min": -1500,
+      "x_max": 1500,
+      "y_min": -1500,
+      "y_max": 1500,
+      "z_min": 100,
+      "z_max": 800,
+      "safe_zones": [
+        {
+          "name": "Safe Zone 1A",
+          "x_min": 0,
+          "x_max": 1000,
+          "y_min": 0,
+          "y_max": 1000,
+          "z_min": 200,
+          "z_max": 600
+        },
+        {
+          "name": "Safe Zone 1B",
+          "x_min": -1000,
+          "x_max": 0,
+          "y_min": 0,
+          "y_max": 1000,
+          "z_min": 200,
+          "z_max": 600
+        }
+      ]
+    },
+    "area_2": {
+      "name": "Palletizing Area 2",
+      "x_min": -1500,
+      "x_max": 1500,
+      "y_min": -1500,
+      "y_max": 1500,
+      "z_min": 100,
+      "z_max": 800,
+      "safe_zones": [
+        {
+          "name": "Safe Zone 2A",
+          "x_min": 0,
+          "x_max": 1000,
+          "y_min": -1000,
+          "y_max": 0,
+          "z_min": 200,
+          "z_max": 600
+        },
+        {
+          "name": "Safe Zone 2B",
+          "x_min": -1000,
+          "x_max": 0,
+          "y_min": -1000,
+          "y_max": 0,
+          "z_min": 200,
+          "z_max": 600
+        }
+      ]
+    }
+  },
+  "rotation_limits": {
+    "rx_min": -18000,
+    "rx_max": 18000,
+    "ry_min": -18000,
+    "ry_max": 18000,
+    "rz_min": -18000,
+    "rz_max": 18000
+  },
+  "speed_limits": {
+    "min": 1,
+    "max": 100,
+    "recommended_min": 10,
+    "recommended_max": 80,
+    "default": 50
+  },
+  "gripper_commands": {
+    "open": 0,
+    "close": 1,
+    "default": 0
+  },
+  "motion_types": {
+    "linear": 1,
+    "joint": 2,
+    "default": 1
+  },
+  "precision_modes": {
+    "fine": 1,
+    "coarse": 2,
+    "default": 1
+  },
+  "set_limits": {
+    "min": 1,
+    "max": 10,
+    "max_coordinates_per_set": 20
+  },
+  "safety_limits": {
+    "min_z_clearance": 50,
+    "max_velocity": 2000,
+    "emergency_stop_deceleration": 5000,
+    "collision_zones": [
+      {
+        "name": "Conveyor Belt",
+        "x_min": -200,
+        "x_max": 200,
+        "y_min": -100,
+        "y_max": 100,
+        "z_min": 0,
+        "z_max": 200,
+        "description": "Conveyor belt area - avoid collision"
+      },
+      {
+        "name": "Fixture",
+        "x_min": -100,
+        "x_max": 100,
+        "y_min": -50,
+        "y_max": 50,
+        "z_min": 0,
+        "z_max": 150,
+        "description": "Fixture area - restricted access"
+      }
+    ]
+  },
+  "command_codes": {
+    "NO_COMMAND": 0,
+    "WRITE_COORDINATE": 1,
+    "READ_COORDINATE": 2,
+    "EXECUTE_COORDINATE": 3,
+    "GET_POSITION": 4,
+    "STOP_MOTION": 5,
+    "RESET_ERROR": 6,
+    "GET_STATUS": 7,
+    "EMERGENCY_STOP": 8,
+    "CLEAR_ALL": 9,
+    "VALIDATE_COORDINATE": 10
+  },
+  "status_codes": {
+    "IDLE": 0,
+    "COMMAND_RECEIVED": 1,
+    "PROCESSING": 2,
+    "COMPLETED": 3,
+    "ERROR": 4,
+    "WARNING": 5,
+    "BUSY": 6,
+    "ROBOT_NOT_READY": 7,
+    "COMMUNICATION_ERROR": 8,
+    "VALIDATION_FAILED": 9,
+    "TIMEOUT": 10
+  },
+  "error_codes": {
+    "NO_ERROR": 0,
+    "INVALID_COMMAND": 1,
+    "INVALID_AREA": 2,
+    "INVALID_SET": 3,
+    "COORDINATE_OUT_OF_RANGE": 4,
+    "ROBOT_NOT_READY": 5,
+    "MOTION_ERROR": 6,
+    "COMMUNICATION_ERROR": 7,
+    "SAFETY_ERROR": 8,
+    "GRIPPER_ERROR": 9,
+    "TIMEOUT": 10,
+    "VALIDATION_FAILED": 11,
+    "SYSTEM_ERROR": 12
+  },
+  "timeouts": {
+    "command_timeout": 30.0,
+    "motion_timeout": 60.0,
+    "communication_timeout": 5.0,
+    "validation_timeout": 10.0
+  },
+  "update_rates": {
+    "plc_communication": 0.1,
+    "robot_feedback": 0.1,
+    "gui_refresh": 0.5,
+    "monitoring": 1.0
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "plc_robot_communication.log",
+    "max_size": 10485760,
+    "backup_count": 5,
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  },
+  "paths": {
+    "coordinate_sets": "coordinate_sets.json",
+    "validation_config": "validation_config.json",
+    "gui_config": "gui_config.json",
+    "log_directory": "logs",
+    "backup_directory": "backups"
+  }
+}
